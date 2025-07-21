@@ -18,7 +18,7 @@ extern "C" {
 class baseMarcher
 {
 public:
-  baseMarcher(double *phi,      double *dx,  long long *flag,
+  baseMarcher(double *phi,      double *beta, double *dx,  long long *flag,
               double *distance, int ndim,    int *shape,
               bool self_test,   int order,   double narrow,
               int periodic);
@@ -93,6 +93,7 @@ protected:
 
   double          * distance_; // return value modified in place
   double          * phi_;
+  double          * beta_;
   double          * dx_;
   long long       * flag_;
   int               error_;

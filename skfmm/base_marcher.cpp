@@ -12,7 +12,7 @@ extern "C" {
 
 
 baseMarcher::baseMarcher(
-  double *phi,      double *dx,   long long *flag,
+  double *phi,      double *beta, double *dx,   long long *flag,
   double *distance, int     ndim, int *shape,
   bool self_test,   int order,    double narrow,
   int periodic)
@@ -21,6 +21,7 @@ baseMarcher::baseMarcher(
   order_      =   order;
   error_      =   1;
   phi_        =   phi;
+  beta_       =   beta;
   dx_         =   dx;
   flag_       =   flag;
   distance_   =   distance;

@@ -76,9 +76,9 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
   // -- phi, dx, flag, and speed
   // -- and the input error checking should be done
 
-  PyObject *pphi, *pdx, *pflag, *pspeed, *pext_mask;
+  PyObject *pphi, *pbeta, *pdx, *pflag, *pspeed, *pext_mask;
   int       self_test, mode, order, periodic;
-  PyArrayObject *phi, *dx, *flag, *speed, *distance, *f_ext, *ext_mask;
+  PyArrayObject *phi, *beta, *dx, *flag, *speed, *distance, *f_ext, *ext_mask;
   double narrow=0;
   distance = 0;
   f_ext    = 0;
@@ -121,6 +121,20 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
   {
     PyErr_SetString(PyExc_ValueError,
                     "phi must be a 1 to 12-D array of doubles");
+    return NULL;
+  }
+
+  beta = (PyArrayObject *)PyArray_FROMANY(pbeta, NPY_DOUBLE, 1,
+                                         10, NPY_IN_ARRAY);
+
+  if (! PyArray_SAMESHAPE(phi,beta))
+  {
+    PyErr_SetString(PyExc_ValueError,
+                    "phi and speed must have the same shape");
+    Py_XDECREF(phi);
+    Py_XDECREF(dx);
+    Py_XDECREF(flag);
+    Py_XDECREF(speed);
     return NULL;
   }
 
@@ -242,6 +256,7 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
 
   // create a level set object to do the calculation
   double * local_phi        = (double *) PyArray_DATA(phi);
+  double * local_beta       = (double *) PyArray_DATA(beta);
   double * local_dx         = (double *) PyArray_DATA(dx);
   long long   * local_flag       = (long long *)   PyArray_DATA(flag);
   long long   * local_ext_mask   = 0;
@@ -258,6 +273,7 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
     {
       marcher = new distanceMarcher(
         local_phi,
+        local_beta,
         local_dx,
         local_flag,
         local_distance,
@@ -273,6 +289,7 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
     {
       marcher = new travelTimeMarcher(
         local_phi,
+        local_beta,
         local_dx,
         local_flag,
         local_distance,
