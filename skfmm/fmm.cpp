@@ -73,22 +73,22 @@ initcfmm(void)
 static PyObject *distance_method(PyObject *self, PyObject *args)
 {
   // when we get here we should have:
-  // -- phi, dx, flag, and speed
+  // -- phi, dx, flag, and speeds
   // -- and the input error checking should be done
 
-  PyObject *pphi, *pbeta, *pdx, *pflag, *pspeed, *pext_mask;
+  PyObject *pphi, *pdriver_set, *pdx, *pflag, *pspeeds, *pext_mask;
   int       self_test, mode, order, periodic;
-  PyArrayObject *phi, *beta, *dx, *flag, *speed, *distance, *f_ext, *ext_mask;
+  PyArrayObject *phi, *driver_set, *dx, *flag, *speeds, *distance, *f_ext, *ext_mask;
   double narrow=0;
   distance = 0;
   f_ext    = 0;
-  speed    = 0;
+  speeds    = 0;
   ext_mask = 0;
 
 
 
   if (!PyArg_ParseTuple(args, "OOOOOiiidi", &pphi, &pdx, &pflag,
-                        &pspeed, &pext_mask, &self_test, &mode,
+                        &pspeeds, &pext_mask, &self_test, &mode,
                         &order, &narrow, &periodic))
   {
     return NULL;
@@ -124,17 +124,17 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
     return NULL;
   }
 
-  beta = (PyArrayObject *)PyArray_FROMANY(pbeta, NPY_DOUBLE, 1,
+  driver_set = (PyArrayObject *)PyArray_FROMANY(pdriver_set, NPY_DOUBLE, 1,
                                          10, NPY_IN_ARRAY);
 
-  if (! PyArray_SAMESHAPE(phi,beta))
+  if (! PyArray_SAMESHAPE(phi,driver_set))
   {
     PyErr_SetString(PyExc_ValueError,
-                    "phi and speed must have the same shape");
+                    "phi and speeds must have the same shape");
     Py_XDECREF(phi);
     Py_XDECREF(dx);
     Py_XDECREF(flag);
-    Py_XDECREF(speed);
+    Py_XDECREF(speeds);
     return NULL;
   }
 
@@ -161,18 +161,19 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
   if (mode == TRAVEL_TIME || mode == EXTENSION_VELOCITY)
   {
     {
-      speed = (PyArrayObject *)PyArray_FROMANY(pspeed, NPY_DOUBLE, 1,
+      speeds = (PyArrayObject *)PyArray_FROMANY(pspeeds, NPY_DOUBLE, 1,
                                                10, NPY_IN_ARRAY);
-      if (!speed)
+      if (!speeds)
       {
         PyErr_SetString(PyExc_ValueError,
-                        "speed must be a 1D to 12-D array of doubles");
+                        "speeds must be a 1D to 12-D array of doubles");
         Py_XDECREF(phi);
         Py_XDECREF(dx);
         Py_XDECREF(flag);
         return NULL;
       }
 
+      PyArrayObject *speed = (PyArrayObject *)PyArray_GETPTR1(speeds, 0);
       if (! PyArray_SAMESHAPE(phi,speed))
       {
         PyErr_SetString(PyExc_ValueError,
@@ -192,7 +193,7 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
     Py_XDECREF(phi);
     Py_XDECREF(dx);
     Py_XDECREF(flag);
-    Py_XDECREF(speed);
+    Py_XDECREF(speeds);
     return NULL;
   }
 
@@ -205,7 +206,7 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
       Py_XDECREF(phi);
       Py_XDECREF(dx);
       Py_XDECREF(flag);
-      Py_XDECREF(speed);
+      Py_XDECREF(speeds);
       return NULL;
     }
   }
@@ -216,7 +217,7 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
     Py_XDECREF(phi);
     Py_XDECREF(dx);
     Py_XDECREF(flag);
-    Py_XDECREF(speed);
+    Py_XDECREF(speeds);
     return NULL;
   }
 
@@ -248,7 +249,7 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
         Py_XDECREF(phi);
         Py_XDECREF(dx);
         Py_XDECREF(flag);
-        Py_XDECREF(speed);
+        Py_XDECREF(speeds);
         return NULL;
       }
 
@@ -256,13 +257,13 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
 
   // create a level set object to do the calculation
   double * local_phi        = (double *) PyArray_DATA(phi);
-  double * local_beta       = (double *) PyArray_DATA(beta);
+  double * local_driver_set       = (double *) PyArray_DATA(driver_set);
   double * local_dx         = (double *) PyArray_DATA(dx);
   long long   * local_flag       = (long long *)   PyArray_DATA(flag);
   long long   * local_ext_mask   = 0;
   if (ext_mask) local_ext_mask = (long long *) PyArray_DATA(ext_mask);
   double * local_speed      = 0;
-  if (speed) local_speed    = (double *) PyArray_DATA(speed);
+  if (speeds) local_speed    = (double *) PyArray_DATA(speeds); //TODO check type of speeds and local speed
   double * local_distance   = (double *) PyArray_DATA(distance);
   int error;
 
@@ -273,7 +274,7 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
     {
       marcher = new distanceMarcher(
         local_phi,
-        local_beta,
+        local_driver_set,
         local_dx,
         local_flag,
         local_distance,
@@ -289,7 +290,7 @@ static PyObject *distance_method(PyObject *self, PyObject *args)
     {
       marcher = new travelTimeMarcher(
         local_phi,
-        local_beta,
+        local_driver_set,
         local_dx,
         local_flag,
         local_distance,

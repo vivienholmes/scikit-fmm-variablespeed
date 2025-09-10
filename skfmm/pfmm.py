@@ -113,7 +113,7 @@ def distance(phi, dx=1.0, self_test=False, order=2,
     return d
 
 
-def travel_time(phi, betafield, speed, dx=1.0, self_test=False, order=2,
+def travel_time(phi, driver_set, speeds, dx=1.0, self_test=False, order=2,
                 narrow=0.0, periodic=False):
     """Return the travel from the zero contour of the array phi given the
     scalar velocity field speed.
@@ -125,10 +125,11 @@ def travel_time(phi, betafield, speed, dx=1.0, self_test=False, order=2,
           the travel time calculation. Phi can of 1,2,3 or higher
           dimension and can be a masked array.
 
-    betafield: array-like, same shape as phi
-        the betas that determine the genetic code of a clone - 
+    driver_set: array-like, same shape as phi
+        the drivers that determine the genetic code of a clone - positions and
+        weights of drivers (weights = 0,1,2,4,8,...)
 
-    speed : array-like, the same shape as phi
+    speeds: array-like, the same shape as phi
             contains the speed of interface propagation at each point
             in the domain.
 
@@ -168,11 +169,12 @@ def travel_time(phi, betafield, speed, dx=1.0, self_test=False, order=2,
         set) of phi to each point in the array given the scalar
         velocity field speed. If the input array speed has values less
         than or equal to zero the return value will be a masked array.
-
+    b : an array the same shape as phi
+        contains the genotype present at each point in the solution
     """
     phi, dx, flag, ext_mask, periodic \
         = pre_process_args(phi, dx, narrow, periodic)
-    t = cFastMarcher(phi, betafield, dx, flag, speed, ext_mask,
+    t = cFastMarcher(phi, driver_set, dx, flag, speeds, ext_mask,
                      int(self_test), TRAVEL_TIME, order, narrow, periodic)
     t = post_process_result(t)
     return t
