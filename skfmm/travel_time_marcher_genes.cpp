@@ -32,18 +32,16 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i)
     }
 }
 
-void travelTimeMarcherGenes::inheritBranchValue(int i) {
-  // find the neighbour with the smallest distance/tau value (that is smaller than
-  // the current one (most recent ancestor)):
+void travelTimeMarcherGenes::inheritBranchValue(int site) {
+  // find the neighbour with the smallest distance/tau value:
   double max_dist = maxDouble;
   int naddr_smallest_nbr = -1; // set an invalid default value
   for (int dim=0; dim<dim_; dim++) {
     for (int j=-1; j<2; j+=2) // each direction (e.g. left and right)
     {
-      int naddr = _getN(i, dim, j, Mask); // get the neighbour of i along dim
+      int naddr = _getN(site, dim, j, Mask); // get the neighbour of i along dim
       if (naddr!=-1 && flag_[naddr]==Frozen) {
-        if ((fabs(distance_[naddr]) < fabs(max_dist)) &&
-            (fabs(distance_[naddr]) <= fabs(distance_[i]))) {
+        if (fabs(distance_[naddr]) < fabs(max_dist)) {
           max_dist = distance_[naddr];
           // note the neighbour with the smallest phi/distance value:
           naddr_smallest_nbr = naddr;
@@ -51,7 +49,7 @@ void travelTimeMarcherGenes::inheritBranchValue(int i) {
       }
     }
   }
-  if (naddr_smallest_nbr != -1) branch_[i] = branch_[naddr_smallest_nbr];
+  if (naddr_smallest_nbr != -1) branch_[site] = branch_[naddr_smallest_nbr];
   // ^ TODO this update rule introduces spurious unsmoothness, like seen in
   // Dijkstra's algorithm! Think hard about a replacement!
   // TODO add a little bit of randomness into parent choice to break/restore the
