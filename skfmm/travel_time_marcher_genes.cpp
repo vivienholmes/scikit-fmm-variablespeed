@@ -40,7 +40,7 @@ void travelTimeMarcherGenes::inheritBranchValue(int site) {
     for (int j=-1; j<2; j+=2) // each direction (e.g. left and right)
     {
       int naddr = _getN(site, dim, j, Mask); // get the neighbour of i along dim
-      if (naddr!=-1 && (fabs(distance_[naddr] <= fabs(distance_[site]))) {
+      if (naddr!=-1 && (fabs(distance_[naddr] <= fabs(distance_[site])))) {
         if (fabs(distance_[naddr]) < fabs(max_dist)) {
           max_dist = distance_[naddr];
           // note the neighbour with the smallest phi/distance value:
