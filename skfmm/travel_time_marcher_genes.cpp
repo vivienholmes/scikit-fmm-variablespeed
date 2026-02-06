@@ -32,6 +32,27 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i)
     }
 }
 
+void travelTimeMarcherGenes::inheritBranchValue(int i) {
+    // find the neighbour with the smallest distance:
+  double max_dist = maxDouble;
+  int naddr_smallest_nbr = -1; // set an invalid default value
+  for (int dim=0; dim<dim_; dim++) {
+    for (int j=-1; j<2; j+=2) // each direction (e.g. left and right)
+    {
+      naddr = _getN(i, dim, j, Mask); // get the neighbour of i along dim
+      if (distance_[naddr] < max_dist) {
+        max_dist = distance_[naddr];
+        // note the neighbour with the smallest phi/distance value:
+        naddr_smallest_nbr = naddr;
+      }
+    }
+  }
+  if (naddr_smallest_nbr != -1) branch_[i] = branch_[naddr_smallest_nbr];
+  // ^ TODO this update rule introduces spurious unsmoothness, like seen in
+  // Dijkstra's algorithm! Think hard about a replacement!
+  // TODO add a little bit of randomness into parent choice to break/restore the
+  // symmetry
+}
 
 // second order point update
 // update the distance from the frozen points
@@ -42,7 +63,6 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
   double a,b,c;
   a=b=c=0;
   int naddr, naddr2; // addresses of neighbours
-  int naddr_smallest_nbr = -1; // set an invalid default value
   // Choose a "good" pair of neighbours on different axes:
   for (int dim=0; dim<dim_; dim++) {
     if (avoid_dim.find(dim) != avoid_dim.end()) {
@@ -50,16 +70,13 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
     }
     double value1 = maxDouble;
     double value2 = maxDouble;
-    for (int j=-1; j<2; j+=2) // each direction (e.g. left and right)
+    for (int j = -1; j < 2; j += 2) // each direction (e.g. left and right)
     {
       naddr = _getN(i, dim, j, Mask); // get the neighbour of i along dim
       if (naddr!=-1 && flag_[naddr]==Frozen)
       {
         if (fabs(distance_[naddr])<fabs(value1))
         {
-          // note the neighbour with the smallest phi/distance value:
-          naddr_smallest_nbr = naddr;
-
           value1 = distance_[naddr];
           naddr2 = _getN(i, dim, j * 2, Mask);
           if (naddr2 != -1 &&
@@ -90,11 +107,7 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
   }
 
   // inherit a value for the branch function at node i:
-  if (naddr_smallest_nbr != -1) branch_[i] = branch_[naddr_smallest_nbr];
-  // ^ TODO this update rule introduces spurious unsmoothness, like seen in
-  // Dijkstra's algorithm! Think hard about a replacement!
-  // TODO add a little bit of randomness into parent choice to break/restore the
-  // symmetry
+  inheritBranchValue(i);
   // update branch function if a driver mutation is present at site i
   // AND the mutation is not already accounted for
   branch_[i] |= drivers_[i];
@@ -130,8 +143,7 @@ double travelTimeMarcherGenes::solveQuadratic(int i, const double &a,
                                          const double &b,
                                          double &c)
 {
-  unsigned bvalue = branch_[i];
-  c -= 1/pow(speeds_[bvalue * size_ + i], 2);
+  c -= 1/pow(speeds_[branch_[i] * size_ + i], 2);
   // TODO change to something like speeds_[index(branch, i)]?
   double r0 = 0;
   double det = pow(b, 2) - 4 * a * c;

@@ -15,6 +15,9 @@ def pre_process_args(phi, dx, narrow, periodic, ext_mask=None, drivers=None, spe
     if not isinstance(phi, np.ndarray):
         phi = np.array(phi)
 
+    c_drivers = None
+    c_speeds = None
+
     # input sanitisation for genetics mode:
     if (drivers or speeds):
         # check the type of drivers and speeds are correct:
@@ -238,12 +241,13 @@ def travel_time(phi, speed, dx=1.0, self_test=False, order=2,
 
 def travel_time_genes(phi, drivers, speeds, dx=1.0, self_test=False, order=2,
                 narrow=0.0, periodic=False):
-    # raise an exception if the problem has more than 3D:
-    assert (phi.ndim <= 3), "ndim > 3 not currently supported for genetic generalisation"
-
     phi, dx, flag, ext_mask, periodic, c_drivers, c_speeds  \
         = pre_process_args(phi, dx, narrow, periodic, 
                            drivers=drivers, speeds=speeds)
+
+    # raise an exception if the problem has more than 3D:
+    assert (phi.ndim <= 3), "ndim > 3 not currently supported for genetic generalisation"
+
     t, b = cFastMarcher(phi, dx, flag, None, ext_mask,
                      int(self_test), TRAVEL_TIME_GENES, order, narrow, periodic,
                      c_speeds, c_drivers)
