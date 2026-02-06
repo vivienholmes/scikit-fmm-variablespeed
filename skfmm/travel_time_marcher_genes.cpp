@@ -67,9 +67,6 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
               ((distance_[naddr2]<=value1 && value1 >=0) ||
                (distance_[naddr2]>=value1 && value1 <=0)))
           {
-            // note the (next) neighbour with the smallest phi/distance value:
-            naddr_smallest_nbr = naddr2;
-
             value2=distance_[naddr2];
             if (phi_[naddr2] * phi_[naddr] < 0  || phi_[naddr2] * phi_[i] < 0)
               value2 *= -1;

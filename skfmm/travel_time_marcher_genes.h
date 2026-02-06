@@ -20,6 +20,7 @@ public:
   }
 
   virtual ~travelTimeMarcherGenes() { }
+  unsigned* branch_;
 
 protected:
   virtual void   initalizeFrozen();
@@ -30,5 +31,4 @@ protected:
 private:
   double* speeds_;
   unsigned* drivers_;
-  unsigned* branch_;
 };
