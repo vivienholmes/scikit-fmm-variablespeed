@@ -64,13 +64,13 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
   a=b=c=0;
   int naddr, naddr2; // addresses of neighbours
   // Choose a "good" pair of neighbours on different axes:
+  int naddr_smallest_nbr = -1; // set an invalid default value // DEBUG
   for (int dim=0; dim<dim_; dim++) {
     if (avoid_dim.find(dim) != avoid_dim.end()) {
       continue; //we should avoid this dimension
     }
     double value1 = maxDouble;
     double value2 = maxDouble;
-    int naddr_smallest_nbr = -1; // set an invalid default value // DEBUG
     for (int j = -1; j < 2; j += 2) // each direction (e.g. left and right)
     {
       naddr = _getN(i, dim, j, Mask); // get the neighbour of i along dim
