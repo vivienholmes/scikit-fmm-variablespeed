@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 #plt.rcParams['text.usetex'] = True
 
 # resolution of grid for plots:
-taps = 140
+taps = 100
 x_width = 6.0
 y_width = 6.0
 
