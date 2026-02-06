@@ -33,15 +33,17 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i)
 }
 
 void travelTimeMarcherGenes::inheritBranchValue(int i) {
-  // find the neighbour with the smallest distance:
-  double max_dist = maxDouble;
+  // find the neighbour with the largest distance/tau value that is smaller than
+  // the current one (most recent ancestor):
+  double max_dist = 0;
   int naddr_smallest_nbr = -1; // set an invalid default value
   for (int dim=0; dim<dim_; dim++) {
     for (int j=-1; j<2; j+=2) // each direction (e.g. left and right)
     {
       int naddr = _getN(i, dim, j, Mask); // get the neighbour of i along dim
       if (naddr!=-1 && flag_[naddr]==Frozen) {
-        if (fabs(distance_[naddr]) < fabs(max_dist)) {
+        if ((fabs(distance_[naddr]) > fabs(max_dist)) && 
+            (fabs(distance_[naddr]) <= fabs(distance_[i])) {
           max_dist = distance_[naddr];
           // note the neighbour with the smallest phi/distance value:
           naddr_smallest_nbr = naddr;
