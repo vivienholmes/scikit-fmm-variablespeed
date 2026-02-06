@@ -389,7 +389,7 @@ static PyObject* distance_method(PyObject* self, PyObject* args)
         travelTimeMarcherGenes *gene_marcher = (travelTimeMarcherGenes*)marcher;
         // get ndim and dims of branch from drivers because it should have the
         // same shape:
-        branch = PyArray_SimpleNewFromData(PyArray_NDIM(drivers), 
+        branch = (PyArrayObject*)PyArray_SimpleNewFromData(PyArray_NDIM(drivers), 
                                            PyArray_DIMS(drivers), 
                                            NPY_UINT, gene_marcher->branch_);
       }
