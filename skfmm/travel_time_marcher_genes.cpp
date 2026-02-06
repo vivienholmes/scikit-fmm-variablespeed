@@ -46,7 +46,6 @@ void travelTimeMarcherGenes::inheritBranchValue(int site) {
         // note the neighbour with the smallest phi/distance value:
         naddr_smallest_nbr = naddr;
       }
-      }
     }
   }
   if (naddr_smallest_nbr != -1) branch_[site] = branch_[naddr_smallest_nbr];
