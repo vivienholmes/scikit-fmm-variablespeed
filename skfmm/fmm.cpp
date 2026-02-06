@@ -424,5 +424,12 @@ static PyObject* distance_method(PyObject* self, PyObject* args)
   {
     return Py_BuildValue("NN", distance, f_ext);
   }
+  if (mode == TRAVEL_TIME_GENES)
+  {
+    PyObject* result = PyTuple_New(2);
+    PyTuple_SetItem(result, 0, (PyObject *) distance);
+    PyTuple_SetItem(result, 1, (PyObject *) marcher.branch_);
+    return result;
+  }
   return (PyObject *)distance;
 }
