@@ -33,7 +33,7 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i)
 }
 
 void travelTimeMarcherGenes::inheritBranchValue(int i) {
-    // find the neighbour with the smallest distance:
+  // find the neighbour with the smallest distance:
   double max_dist = maxDouble;
   int naddr_smallest_nbr = -1; // set an invalid default value
   for (int dim=0; dim<dim_; dim++) {
@@ -66,7 +66,6 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
   a=b=c=0;
   int naddr, naddr2; // addresses of neighbours
   // Choose a "good" pair of neighbours on different axes:
- // int naddr_smallest_nbr = -1; // set an invalid default value // DEBUG
   for (int dim=0; dim<dim_; dim++) {
     if (avoid_dim.find(dim) != avoid_dim.end()) {
       continue; //we should avoid this dimension
@@ -91,7 +90,6 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
             if (phi_[naddr2] * phi_[naddr] < 0  || phi_[naddr2] * phi_[i] < 0)
               value2 *= -1;
           }
-  //        naddr_smallest_nbr = naddr;
         }
       }
     }
@@ -112,7 +110,6 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
 
   // inherit a value for the branch function at node i:
   inheritBranchValue(i);
-  //if (naddr_smallest_nbr != -1) branch_[i] = branch_[naddr_smallest_nbr];
   // update branch function if a driver mutation is present at site i
   // AND the mutation is not already accounted for
   branch_[i] |= drivers_[i];
