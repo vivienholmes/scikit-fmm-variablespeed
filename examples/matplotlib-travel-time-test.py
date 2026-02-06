@@ -16,30 +16,37 @@ speeds = [1+X**4, 3+X**4] # a list of 2^n speed functions
 
 print(drivers)
 
+tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps)
+
 plt.subplot(221)
-plt.title("Zero-contour of phi")
-plt.contour(X, Y, phi, [1e-6], colors='black', linewidths=(3))
+#plt.title("Zero-contour of phi")
+#plt.contour(X, Y, phi, [1e-6], colors='black', linewidths=(3))
+plt.title("branch function")
+plt.contour(X, Y, bfield, levels=4)
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 
 plt.subplot(222)
 plt.title("Travel time")
 plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
-plt.contour(X, Y, skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps), 15)
+
+plt.contour(X, Y, tau, 15)
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 
 plt.subplot(223)
 plt.title("Travel time with x- \nand y- directions periodic")
 plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
-plt.contour(X, Y, skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps, periodic=True), 15)
+tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps, periodic=True)
+plt.contour(X, Y, tau, 15)
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 
 plt.subplot(224)
 plt.title("Travel time with y- \ndirection periodic ")
 plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
-plt.contour(X, Y, skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps, periodic=(1,0)), 15)
+tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps, periodic=(1,0))
+plt.contour(X, Y, tau, 15)
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 

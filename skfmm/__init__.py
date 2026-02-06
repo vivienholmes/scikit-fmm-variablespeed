@@ -537,25 +537,28 @@ def testing():
     Travel time genes tests 1
 
     >>> np.testing.assert_allclose(travel_time_genes([0, 1, 1, 1, 1],
-    ...                                 drivers=[0,0,0,0,0], speeds=[2, 2, 2, 2, 2]),
+    ...                                 drivers={}, speeds=[2, 2, 2, 2, 2])[0],
     ...                                        [0, 0.5, 1.0, 1.5, 2.0])
     >>> np.testing.assert_array_equal(travel_time_genes([1, 0, -1],
-    ...                                 drivers=[0,0,0], speeds=[2, 2, 2]),
+    ...                                 drivers={}, speeds=[2, 2, 2])[0],
     ...                                           [0.5, 0, 0.5])
     >>> np.testing.assert_allclose(travel_time_genes([0, 1, 1, 1, 1],
-    ...                                      drivers=[0,0,0,1,0],
-    ...                                       speeds=[2, 2, 2, 2, 2, 4, 4, 4, 4, 4]),
+    ...                                      drivers={1: [3,0]},
+    ...                                       speeds=[[2, 2, 2, 2, 2], [4, 4, 4, 4, 4]])[0],
     ...                            [0, 0.5, 1.0, 1.5, 1.75])
     >>> np.testing.assert_allclose(travel_time_genes([0, 1, 1, 1, 1],
-    ...                                      drivers=[0,1,0,2,0],
-    ...                                       speeds=[2, 2, 2, 2, 2, 
-    ...                                               0, 4, 4, 4, 4,
-    ...                                               0, 1, 1, 1, 1,
-    ...                                               0, 6, 6, 6, 6]),
+    ...                                      drivers={1: [1,0], 2: [3, 0]},
+    ...                                       speeds=[[2, 2, 2, 2, 2], 
+    ...                                               [0, 4, 4, 4, 4],
+    ...                                               [0, 1, 1, 1, 1],
+    ...                                               [0, 6, 6, 6, 6]])[0],
     ...                            [0, 0.5, 0.75, 1.0, 1.125])
     >>> np.testing.assert_allclose(travel_time_genes([[0, 1], [1, 1]],
-    ...                                      drivers=[[0,0],[1,2]],
-    ...                                       speeds=[2,2,2,2,4,4,4,4,5,5,5,5,6,6,6,6]),
+    ...                                      drivers=[[0,0],[1,2]], 
+    ...                                      speeds=[[2,2,2,2],
+    ...                                              [4,4,4,4],
+    ...                                              [5,5,5,5],
+    ...                                              [6,6,6,6]])[0],
     ...                            [[0, 0.5], [0.5, 0.75]])
 
     Travel time tests 2

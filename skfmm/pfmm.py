@@ -15,65 +15,67 @@ def pre_process_args(phi, dx, narrow, periodic, ext_mask=None, drivers=None, spe
     if not isinstance(phi, np.ndarray):
         phi = np.array(phi)
 
-    # check the type of drivers and speeds are correct:
-    if not isinstance(drivers, dict):
-        raise TypeError("drivers should be a dictionary of the form: {weight_i: [x_i, y_i], ...}")
-    if not isinstance(speeds[0], np.ndarray):
-        raise TypeError("speeds should be a list of NumPy arrays with at least one entry")
+    # input sanitisation for genetics mode:
+    if (drivers or speeds):
+        # check the type of drivers and speeds are correct:
+        if not isinstance(drivers, dict):
+            raise TypeError("drivers should be a dictionary of the form: {weight_i: [x_i, y_i], ...}")
+        if not isinstance(speeds[0], np.ndarray):
+            speeds = [np.array(speed) for speed in speeds]
 
-    # check that all driver weights are powers of 2
-    max_branch_value = 0
-    for weight in drivers:
-        if (weight & (weight - 1)) != 0:
-            raise ValueError("each weight in drivers should be a power of 2")
-        max_branch_value += weight
-    # check that speeds has 2^n entries when drivers has n (non-WT) entries
-    if (len(speeds) != max_branch_value + 1):
-        raise ValueError("list of speeds should have 2^n entries, if n = num.  drivers")
-    
-    # get information about resolution from phi:
-    taps = phi.shape[0] - 1
-    # TODO currently assumes same x and y resolutions (see below)
+        # check that all driver weights are powers of 2
+        max_branch_value = 0
+        for weight in drivers:
+            if (weight & (weight - 1)) != 0:
+                raise ValueError("each weight in drivers should be a power of 2")
+            max_branch_value += weight
+        # check that speeds has 2^n entries when drivers has n (non-WT) entries
+        if (len(speeds) != max_branch_value + 1):
+            raise ValueError("list of speeds should have 2^n entries, if n = num.  drivers")
+        
+        # get information about resolution from phi:
+        taps = phi.shape[0] - 1
+        # TODO currently assumes same x and y resolutions (see below)
 
-    # preprocess drivers: build the array from the drivers dict:
-    c_drivers = phi * 0
-    # iterate over driver dict:
-    if phi.ndim == 1:
-        for weight, posn in drivers.items():
-            # place the driver weights on their positions:
-            row = int(taps / 2) + int(posn[0] / dx)
-            c_drivers[row] = weight
-            # check drivers have been added correctly:
-            print(weight, posn, row, c_drivers[row]) # DEBUG
-    if phi.ndim == 2:
-        for weight, posn in drivers.items():
-            # place the driver weights on their positions:
-            # TODO currently assumes same x and y resolutions
-            col = int(taps / 2) + int(posn[0] / dx)
-            row = int(taps / 2) + int(posn[1] / dx)
-            c_drivers[row][col] = weight
-            # check drivers have been added correctly:
-            print(weight, posn, row, col, c_drivers[row][col]) # DEBUG
-    if phi.ndim == 3:
-        for weight, posn in drivers.items():
-            # place the driver weights on their positions:
-            # TODO currently assumes same x and y resolutions
-            lyr = int(taps / 2) + int(posn[0] / dx)
-            col = int(taps / 2) + int(posn[1] / dx)
-            row = int(taps / 2) + int(posn[2] / dx)
-            c_drivers[row][col][lyr] = weight
-            # check drivers have been added correctly:
-            print(weight, posn, row, col, lyr, c_drivers[row][col][lyr]) # DEBUG
+        # preprocess drivers: build the array from the drivers dict:
+        c_drivers = phi * 0
+        # iterate over driver dict:
+        if phi.ndim == 1:
+            for weight, posn in drivers.items():
+                # place the driver weights on their positions:
+                row = int(taps / 2) + int(posn[0] / dx)
+                c_drivers[row] = weight
+                # check drivers have been added correctly:
+                print(weight, posn, row, c_drivers[row]) # DEBUG
+        if phi.ndim == 2:
+            for weight, posn in drivers.items():
+                # place the driver weights on their positions:
+                # TODO currently assumes same x and y resolutions
+                col = int(taps / 2) + int(posn[0] / dx)
+                row = int(taps / 2) + int(posn[1] / dx)
+                c_drivers[row][col] = weight
+                # check drivers have been added correctly:
+                print(weight, posn, row, col, c_drivers[row][col]) # DEBUG
+        if phi.ndim == 3:
+            for weight, posn in drivers.items():
+                # place the driver weights on their positions:
+                # TODO currently assumes same x and y resolutions
+                lyr = int(taps / 2) + int(posn[0] / dx)
+                col = int(taps / 2) + int(posn[1] / dx)
+                row = int(taps / 2) + int(posn[2] / dx)
+                c_drivers[row][col][lyr] = weight
+                # check drivers have been added correctly:
+                print(weight, posn, row, col, lyr, c_drivers[row][col][lyr]) # DEBUG
 
-    c_drivers = c_drivers.tolist() # convert numpy array to list
-    if c_drivers is not None and not isinstance(c_drivers, np.ndarray):
-        c_drivers = np.array(c_drivers, dtype=np.uint32)
-    
-    # convert speeds from list of speeds to flattened numpy array
-    c_speeds = np.array(speeds).flatten()
+        c_drivers = c_drivers.tolist() # convert numpy array to list
+        if c_drivers is not None and not isinstance(c_drivers, np.ndarray):
+            c_drivers = np.array(c_drivers, dtype=np.uint32)
+        
+        # convert speeds from list of speeds to flattened numpy array
+        c_speeds = np.array(speeds).flatten()
 
-    if c_speeds is not None and not isinstance(c_speeds, np.ndarray):
-        c_speeds = np.array(c_speeds)
+        if c_speeds is not None and not isinstance(c_speeds, np.ndarray):
+            c_speeds = np.array(c_speeds)
     
     if type(dx) is float or type(dx) is int:
         dx = [dx for _ in range(phi.ndim)]
