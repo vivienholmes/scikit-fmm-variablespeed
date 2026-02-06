@@ -99,6 +99,7 @@ static PyObject* distance_method(PyObject* self, PyObject* args)
   PyArrayObject* ext_mask = nullptr;
   PyArrayObject* speeds = nullptr; // for genetics extension
   PyArrayObject* drivers = nullptr; // for genetics extension
+  PyArrayObject* branch = nullptr; // for genetics extension
 
   double narrow = 0;
 
@@ -384,6 +385,9 @@ static PyObject* distance_method(PyObject* self, PyObject* args)
   try {
       marcher->march();
       error = marcher->getError();
+      if (mode == TRAVEL_TIME_GENES) {
+        branch = marcher->branch_;
+      }
       delete marcher;
     } catch (const std::exception& exn) {
       // propagate error
@@ -428,7 +432,7 @@ static PyObject* distance_method(PyObject* self, PyObject* args)
   {
     PyObject* result = PyTuple_New(2);
     PyTuple_SetItem(result, 0, (PyObject *) distance);
-    PyTuple_SetItem(result, 1, (PyObject *) marcher.branch_);
+    PyTuple_SetItem(result, 1, (PyObject *) branch);
     return result;
   }
   return (PyObject *)distance;
