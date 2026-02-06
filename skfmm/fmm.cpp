@@ -386,7 +386,7 @@ static PyObject* distance_method(PyObject* self, PyObject* args)
       marcher->march();
       error = marcher->getError();
       if (mode == TRAVEL_TIME_GENES) {
-        branch = (travelTimeMarcherGenes*)marcher->branch_;
+        branch = ((travelTimeMarcherGenes*)marcher)->branch_;
       }
       delete marcher;
     } catch (const std::exception& exn) {
