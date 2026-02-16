@@ -6,6 +6,50 @@ from .cfmm import cFastMarcher
 FAR, NARROW, FROZEN, MASK = 0, 1, 2, 3
 DISTANCE, TRAVEL_TIME, EXTENSION_VELOCITY, TRAVEL_TIME_GENES = 0, 1, 2, 3
 
+def emplace_drivers(phi, dx, drivers, r_reg=0):
+    # get information about resolution from phi:
+    taps = phi.shape[0] - 1
+    # TODO currently assumes same x and y resolutions (see below)
+
+    # TODO r_reg is the regularisation radius: instead of single points, use
+    # "fat" circular blobs to improve symmetry
+
+    c_drivers = phi * 0
+    # iterate over driver dict and emplace drivers on the array:
+    for weight, posn in drivers.items():
+        # TODO rewrite so all points within r_reg of each driver are assigned
+        # the same weight:
+        if phi.ndim == 1:
+            # place the driver weights on their positions:
+            row = int(taps / 2) + int(posn[0] / dx)
+            c_drivers[row] = weight
+            # check drivers have been added correctly:
+            print(weight, posn, row, c_drivers[row]) # DEBUG
+            print("wololo")
+        if phi.ndim == 2:
+            # place the driver weights on their positions:
+            # TODO currently assumes same x and y resolutions
+            col = int(taps / 2) + int(posn[0] / dx)
+            row = int(taps / 2) + int(posn[1] / dx)
+            c_drivers[row][col] = weight
+            # check drivers have been added correctly:
+            print(weight, posn, row, col, c_drivers[row][col]) # DEBUG
+            print("wololo")
+        if phi.ndim == 3:
+            # place the driver weights on their positions:
+            # TODO currently assumes same x and y resolutions
+            lyr = int(taps / 2) + int(posn[0] / dx)
+            col = int(taps / 2) + int(posn[1] / dx)
+            row = int(taps / 2) + int(posn[2] / dx)
+            c_drivers[row][col][lyr] = weight
+            # check drivers have been added correctly:
+            print(weight, posn, row, col, lyr, c_drivers[row][col][lyr]) # DEBUG
+            print("wololo")
+
+    c_drivers = c_drivers.tolist() # convert/flatten numpy array to list
+    if c_drivers is not None and not isinstance(c_drivers, np.ndarray):
+        c_drivers = np.array(c_drivers, dtype=np.uint32)
+    return c_drivers
 
 def pre_process_args(phi, dx, narrow, periodic, ext_mask=None, drivers=None, speeds=None):
     """
@@ -26,6 +70,7 @@ def pre_process_args(phi, dx, narrow, periodic, ext_mask=None, drivers=None, spe
         if not isinstance(speeds[0], np.ndarray):
             speeds = [np.array(speed) for speed in speeds]
 
+        # TODO should be more pythonic, list comprehensions
         # check that all driver weights are powers of 2
         max_branch_value = 0
         for weight in drivers:
@@ -36,44 +81,9 @@ def pre_process_args(phi, dx, narrow, periodic, ext_mask=None, drivers=None, spe
         if (len(speeds) != max_branch_value + 1):
             raise ValueError("list of speeds should have 2^n entries, if n = num.  drivers")
         
-        # get information about resolution from phi:
-        taps = phi.shape[0] - 1
-        # TODO currently assumes same x and y resolutions (see below)
-
         # preprocess drivers: build the array from the drivers dict:
-        c_drivers = phi * 0
-        # iterate over driver dict:
-        if phi.ndim == 1:
-            for weight, posn in drivers.items():
-                # place the driver weights on their positions:
-                row = int(taps / 2) + int(posn[0] / dx)
-                c_drivers[row] = weight
-                # check drivers have been added correctly:
-                print(weight, posn, row, c_drivers[row]) # DEBUG
-        if phi.ndim == 2:
-            for weight, posn in drivers.items():
-                # place the driver weights on their positions:
-                # TODO currently assumes same x and y resolutions
-                col = int(taps / 2) + int(posn[0] / dx)
-                row = int(taps / 2) + int(posn[1] / dx)
-                c_drivers[row][col] = weight
-                # check drivers have been added correctly:
-                print(weight, posn, row, col, c_drivers[row][col]) # DEBUG
-        if phi.ndim == 3:
-            for weight, posn in drivers.items():
-                # place the driver weights on their positions:
-                # TODO currently assumes same x and y resolutions
-                lyr = int(taps / 2) + int(posn[0] / dx)
-                col = int(taps / 2) + int(posn[1] / dx)
-                row = int(taps / 2) + int(posn[2] / dx)
-                c_drivers[row][col][lyr] = weight
-                # check drivers have been added correctly:
-                print(weight, posn, row, col, lyr, c_drivers[row][col][lyr]) # DEBUG
-
-        c_drivers = c_drivers.tolist() # convert numpy array to list
-        if c_drivers is not None and not isinstance(c_drivers, np.ndarray):
-            c_drivers = np.array(c_drivers, dtype=np.uint32)
-        
+        c_drivers = emplace_drivers(phi, dx, drivers)
+               
         # convert speeds from list of speeds to flattened numpy array
         c_speeds = np.array(speeds).flatten()
 
