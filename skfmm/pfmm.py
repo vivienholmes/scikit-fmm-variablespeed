@@ -6,7 +6,7 @@ from .cfmm import cFastMarcher
 FAR, NARROW, FROZEN, MASK = 0, 1, 2, 3
 DISTANCE, TRAVEL_TIME, EXTENSION_VELOCITY, TRAVEL_TIME_GENES = 0, 1, 2, 3
 
-def distance(driver_position, current_index, resolution, dx):
+def euclidean_distance(driver_position, current_index, resolution, dx):
     return np.linalg.norm(driver_position - dx * (current_index - resolution / 2))
 
 def initialise_drivers(phi, dx, drivers, r_reg=0):
@@ -18,7 +18,7 @@ def initialise_drivers(phi, dx, drivers, r_reg=0):
     it = np.nditer(c_drivers, flags=['multi_index'])
     for x in it:
         for driver_weight, driver_position in drivers.items():
-            if distance(driver_position, it.multi_index, resolution, dx) <= max(r_reg, dx / 2):
+            if euclidean_distance(driver_position, it.multi_index, resolution, dx) <= max(r_reg, dx / 2):
                 x |= driver_weight
 
     c_drivers = c_drivers.tolist() # convert/flatten numpy array to list
@@ -40,7 +40,7 @@ def pre_process_args(phi, dx, narrow, periodic, ext_mask=None, drivers=None, spe
 
     # input sanitisation for genetics mode:
     if (drivers or speeds):
-
+        # check the type of drivers and speeds are correct:
         if not isinstance(drivers, dict):
             raise TypeError("drivers should be a dictionary of the form: {weight_i: [x_i, y_i], ...}")
         if not isinstance(speeds[0], np.ndarray):
