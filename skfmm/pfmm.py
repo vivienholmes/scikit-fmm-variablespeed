@@ -7,12 +7,9 @@ FAR, NARROW, FROZEN, MASK = 0, 1, 2, 3
 DISTANCE, TRAVEL_TIME, EXTENSION_VELOCITY, TRAVEL_TIME_GENES = 0, 1, 2, 3
 
 def euclidean_distance(driver_position, current_index, phi, dx):
-    return np.linalg.norm(driver_position - dx * (current_index - phi.shape / 2))
+    return np.linalg.norm(driver_position - dx * (current_index - tuple(x/2 for x in phi.shape))
 
 def initialise_drivers(phi, dx, drivers, r_reg=0):
-    # get information about resolution from phi:
-    # TODO currently assumes same x and y resolutions (see below)
-
     c_drivers = phi * 0
     it = np.nditer(c_drivers, flags=['multi_index'])
     for x in it:
