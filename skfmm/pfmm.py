@@ -6,20 +6,22 @@ from .cfmm import cFastMarcher
 FAR, NARROW, FROZEN, MASK = 0, 1, 2, 3
 DISTANCE, TRAVEL_TIME, EXTENSION_VELOCITY, TRAVEL_TIME_GENES = 0, 1, 2, 3
 
-def euclidean_distance(driver_position, current_index, phi, dx):
-    position_in_space = tuple(dx * (current_index[i] - (phi.shape[i] - 1)/2) for i in range(phi.ndim))
-    position_in_space = position_in_space[::-1]
-    return np.linalg.norm(tuple(driver_position[i] - position_in_space[i] for i in range(phi.ndim)))
+def euclidean_distance(position_a, position_b):
+    return np.linalg.norm(tuple(map(lambda x, y: x - y, position_a, position_b)))
 
 def initialise_drivers(phi, dx, drivers, r_reg=0):
     c_drivers = phi * 0
     c_drivers = c_drivers.astype(int, copy=False)
-    it = np.nditer(c_drivers, flags=['multi_index'])
+    it = np.nditer(c_drivers, op_flags=['readwrite'], flags=['multi_index'])
     for x in it:
+        current_position = tuple(map(lambda ix, resol: dx * (ix - (resol - 1) / 2),
+                                     it.multi_index, phi.shape))
+        current_position = current_position[::-1] # rotate: np assumes row-major
         for driver_weight, driver_position in drivers.items():
-            if euclidean_distance(driver_position, it.multi_index, phi, dx) <= max(r_reg, dx):
-                c_drivers[it.multi_index] |= driver_weight
+            if euclidean_distance(driver_position, current_position) <= max(r_reg, dx):
+                x |= driver_weight
 
+    # TODO are these three lines necessary?
     c_drivers = c_drivers.tolist() # convert/flatten numpy array to list
     if c_drivers is not None and not isinstance(c_drivers, np.ndarray):
         c_drivers = np.array(c_drivers, dtype=np.uint32)

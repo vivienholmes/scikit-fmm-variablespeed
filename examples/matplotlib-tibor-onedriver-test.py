@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 # resolution of grid for plots:
 resolution = 400
+# real/"physical" length of plot ranges:
 x_width = 6.0
 y_width = 6.0
 
