@@ -16,7 +16,7 @@ def initialise_drivers(phi, dx, drivers, r_reg=0):
     for x in it:
         for driver_weight, driver_position in drivers.items():
             if euclidean_distance(driver_position, it.multi_index, phi, dx) <= max(r_reg, dx / 2):
-                x |= driver_weight
+                c_drivers[it.multi_index] |= driver_weight
 
     c_drivers = c_drivers.tolist() # convert/flatten numpy array to list
     if c_drivers is not None and not isinstance(c_drivers, np.ndarray):
