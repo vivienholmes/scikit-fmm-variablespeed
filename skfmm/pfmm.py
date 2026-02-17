@@ -7,7 +7,8 @@ FAR, NARROW, FROZEN, MASK = 0, 1, 2, 3
 DISTANCE, TRAVEL_TIME, EXTENSION_VELOCITY, TRAVEL_TIME_GENES = 0, 1, 2, 3
 
 def euclidean_distance(driver_position, current_index, phi, dx):
-    return np.linalg.norm(driver_position - dx * (current_index - tuple(x/2 for x in phi.shape)))
+    position_in_space = tuple(dx * (current_index[i] - phi.shape[i]/2) for i in range(phi.ndim))
+    return np.linalg.norm(tuple(driver_position[i] - position_in_space[i] for i in range(phi.ndim)))
 
 def initialise_drivers(phi, dx, drivers, r_reg=0):
     c_drivers = phi * 0
