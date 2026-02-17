@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 #plt.rcParams['text.usetex'] = True
 
 # resolution of grid for plots:
-resolution = 100
+resolution = 400
 x_width = 6.0
 y_width = 6.0
 
@@ -18,7 +18,7 @@ v_spd = 1.555 # TODO speeds smaller than 3ish appear to create weird artifacts
 # for low speeds, fewer steps (and bigger dx values) appear to be better?
 speeds = [np.ones((resolution+1, resolution+1)), v_spd * np.ones((resolution+1, resolution+1))] # a list of 2^n speed functions
 
-tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/resolution)
+tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/resolution, r_reg=0.15)
 
 ax[0].set_title('tau')
 ax[0].contour(X, Y, phi, [1e-4], colors='black', linewidths=(3))

@@ -7,15 +7,17 @@ FAR, NARROW, FROZEN, MASK = 0, 1, 2, 3
 DISTANCE, TRAVEL_TIME, EXTENSION_VELOCITY, TRAVEL_TIME_GENES = 0, 1, 2, 3
 
 def euclidean_distance(driver_position, current_index, phi, dx):
-    position_in_space = tuple(dx * (current_index[i] - phi.shape[i]/2) for i in range(phi.ndim))
+    position_in_space = tuple(dx * (current_index[i] - (phi.shape[i] - 1)/2) for i in range(phi.ndim))
+    position_in_space = position_in_space[::-1]
     return np.linalg.norm(tuple(driver_position[i] - position_in_space[i] for i in range(phi.ndim)))
 
 def initialise_drivers(phi, dx, drivers, r_reg=0):
     c_drivers = phi * 0
+    c_drivers = c_drivers.astype(int, copy=False)
     it = np.nditer(c_drivers, flags=['multi_index'])
     for x in it:
         for driver_weight, driver_position in drivers.items():
-            if euclidean_distance(driver_position, it.multi_index, phi, dx) <= max(r_reg, dx / 2):
+            if euclidean_distance(driver_position, it.multi_index, phi, dx) <= max(r_reg, dx):
                 c_drivers[it.multi_index] |= driver_weight
 
     c_drivers = c_drivers.tolist() # convert/flatten numpy array to list
@@ -24,7 +26,8 @@ def initialise_drivers(phi, dx, drivers, r_reg=0):
 
     return c_drivers
 
-def pre_process_args(phi, dx, narrow, periodic, ext_mask=None, drivers=None, speeds=None):
+def pre_process_args(phi, dx, narrow, periodic, ext_mask=None, 
+                     drivers=None, speeds=None, r_reg=0):
     """
     get input data into the correct form for calling the c extension module
     This wrapper allows for a little bit of flexibility in the input types
@@ -52,7 +55,7 @@ def pre_process_args(phi, dx, narrow, periodic, ext_mask=None, drivers=None, spe
         if (len(speeds) != max_branch_value + 1):
             raise ValueError("list of speeds should have 2^n entries, if n = num.  drivers")
         
-        c_drivers = initialise_drivers(phi, dx, drivers)
+        c_drivers = initialise_drivers(phi, dx, drivers, r_reg)
         c_speeds = np.array(speeds).flatten()
 
         if c_speeds is not None and not isinstance(c_speeds, np.ndarray):
@@ -218,10 +221,10 @@ def travel_time(phi, speed, dx=1.0, self_test=False, order=2,
     return t
 
 def travel_time_genes(phi, drivers, speeds, dx=1.0, self_test=False, order=2,
-                narrow=0.0, periodic=False):
+                narrow=0.0, periodic=False, r_reg=0):
     phi, dx, flag, ext_mask, periodic, c_drivers, c_speeds  \
         = pre_process_args(phi, dx, narrow, periodic, 
-                           drivers=drivers, speeds=speeds)
+                           drivers=drivers, speeds=speeds, r_reg=r_reg)
 
     # raise an exception if the problem has more than 3D:
     assert (phi.ndim <= 3), "ndim > 3 not currently supported for genetic generalisation"
