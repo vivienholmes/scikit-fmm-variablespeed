@@ -6,19 +6,18 @@ from .cfmm import cFastMarcher
 FAR, NARROW, FROZEN, MASK = 0, 1, 2, 3
 DISTANCE, TRAVEL_TIME, EXTENSION_VELOCITY, TRAVEL_TIME_GENES = 0, 1, 2, 3
 
-def euclidean_distance(driver_position, current_index, resolution, dx):
-    return np.linalg.norm(driver_position - dx * (current_index - resolution / 2))
+def euclidean_distance(driver_position, current_index, phi, dx):
+    return np.linalg.norm(driver_position - dx * (current_index - phi.shape / 2))
 
 def initialise_drivers(phi, dx, drivers, r_reg=0):
     # get information about resolution from phi:
-    resolution = phi.shape[0] - 1
     # TODO currently assumes same x and y resolutions (see below)
 
     c_drivers = phi * 0
     it = np.nditer(c_drivers, flags=['multi_index'])
     for x in it:
         for driver_weight, driver_position in drivers.items():
-            if euclidean_distance(driver_position, it.multi_index, resolution, dx) <= max(r_reg, dx / 2):
+            if euclidean_distance(driver_position, it.multi_index, phi, dx) <= max(r_reg, dx / 2):
                 x |= driver_weight
 
     c_drivers = c_drivers.tolist() # convert/flatten numpy array to list
