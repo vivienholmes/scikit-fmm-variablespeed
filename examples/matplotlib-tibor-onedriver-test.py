@@ -19,14 +19,16 @@ v_spd = 1.555 # TODO speeds smaller than 3ish appear to create weird artifacts
 # for low speeds, fewer steps (and bigger dx values) appear to be better?
 speeds = [np.ones((resolution+1, resolution+1)), v_spd * np.ones((resolution+1, resolution+1))] # a list of 2^n speed functions
 
-tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/resolution, r_reg=0.15)
+tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/resolution)
 
+# draw the arrival time field as a contour plot:
 ax[0].set_title('tau')
 ax[0].contour(X, Y, phi, [1e-4], colors='black', linewidths=(3))
 ax[0].contour(X, Y, tau, levels=30)
 
 ax[0].set_aspect(1)
 
+# draw the dominant subclone/genotype as blocks of colour:
 ax[1].set_title('branch')
 ax[1].pcolormesh(X, Y, bfield)
 ax[1].set_aspect(1)
@@ -39,10 +41,18 @@ y_spiral = np.exp(theta / beta) * np.sin(theta)
 
 plt.xticks([]); plt.yticks([])
 
+# first on the tau plot:
 ax[0].plot(x_spiral, y_spiral, 'r--')
 ax[0].plot(x_spiral, -y_spiral, 'r--')
 ax[0].set_xlim(-0.5 * x_width, +0.5 * x_width)
 ax[0].set_ylim(-0.5 * y_width, +0.5 * y_width)
+
+# then on the branch plot:
+
+ax[1].plot(x_spiral, y_spiral, 'r--')
+ax[1].plot(x_spiral, -y_spiral, 'r--')
+ax[1].set_xlim(-0.5 * x_width, +0.5 * x_width)
+ax[1].set_ylim(-0.5 * y_width, +0.5 * y_width)
 
 #fig.show()
 plt.savefig("testgraph2.png")
