@@ -113,6 +113,10 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
   // AND the mutation is not already accounted for
   branch_[i] |= drivers_[i];
 
+  // TODO instead of choosing a branch_ value out here, get all the neighbours'
+  // branch values, and see which one results in the soonest/shortest
+  // time/distance.
+
   try {
     double res = solveQuadratic(i,a,b,c);
     return res;
@@ -144,6 +148,9 @@ double travelTimeMarcherGenes::solveQuadratic(int i, const double &a,
                                          const double &b,
                                          double &c)
 {
+  // TODO try to solve for either/all possible branch values (when neighbours
+  // have different values) and choose the one that has the smallest solution
+  // for distance. Rationale: we want the first arrival to win
   c -= 1/pow(speeds_[branch_[i] * size_ + i], 2);
   // TODO change to something like speeds_[index(branch, i)]?
   double r0 = 0;
