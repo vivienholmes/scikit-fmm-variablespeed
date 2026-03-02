@@ -150,7 +150,11 @@ double travelTimeMarcherGenes::solveQuadratic(int i, const double &a,
 {
   // TODO try to solve for either/all possible branch values (when neighbours
   // have different values) and choose the one that has the smallest solution
-  // for distance. Rationale: we want the first arrival to win
+  // for distance. Rationale: we want the first arrival to win, and to solve for
+  // the smallest arrival time. Varying the branch value to look at all our
+  // neighbours is like varying the path near the end-point (when the end-point
+  // is near a caustic/boundary).
+
   c -= 1/pow(speeds_[branch_[i] * size_ + i], 2);
   // TODO change to something like speeds_[index(branch, i)]?
   double r0 = 0;
