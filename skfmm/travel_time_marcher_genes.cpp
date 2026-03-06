@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>    // std::min_element, std::max_element
+#include <cmath>
 using std::vector;
 
 
@@ -124,7 +125,7 @@ vector<unsigned int> travelTimeMarcherGenes::get_neighbouring_branch_values(int 
     for (int j=-1; j<2; j+=2) // each direction (e.g. left and right)
     {
       int naddr = _getN(site, dim, j, Mask); // get the neighbour of i along dim
-      if ((naddr!=-1) && (flag_[naddr]==Frozen)) {
+      if ((naddr!=-1) && (flag_[naddr]==Frozen) && std::isfinite(distance_[naddr])) {
         neighbouring_branch_values.push_back(branch_[naddr]);
       }
     }
