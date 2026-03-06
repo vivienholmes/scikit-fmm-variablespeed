@@ -25,8 +25,8 @@ public:
 protected:
   virtual void   initalizeFrozen();
   virtual double updatePointOrderTwo(int i);
-  virtual void inheritBranchValue(int i);
   virtual double updatePointOrderTwo(int i, std::set<int> avoid_dim);
+  virtual vector<unsigned int> travelTimeMarcherGenes::get_neighbouring_branch_values(int i);
   virtual double solveQuadratic(int i, const double &a,
                                 const double &b, double &c);
 private:

@@ -32,29 +32,6 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i)
     }
 }
 
-void travelTimeMarcherGenes::inheritBranchValue(int site) {
-  // find the neighbour with the smallest distance/tau value:
-  double max_dist = maxDouble;
-  int naddr_smallest_nbr = -1; // set an invalid default value
-  for (int dim=0; dim<dim_; dim++) {
-    for (int j=-1; j<2; j+=2) // each direction (e.g. left and right)
-    {
-      int naddr = _getN(site, dim, j, Mask); // get the neighbour of i along dim
-      if ((naddr!=-1) && (flag_[naddr]==Frozen) && 
-          (fabs(distance_[naddr]) < fabs(max_dist))) {
-        max_dist = distance_[naddr];
-        // note the neighbour with the smallest phi/distance value:
-        naddr_smallest_nbr = naddr;
-      }
-    }
-  }
-  if (naddr_smallest_nbr != -1) branch_[site] = branch_[naddr_smallest_nbr];
-  // ^ TODO this update rule introduces spurious unsmoothness, like seen in
-  // Dijkstra's algorithm! Think hard about a replacement!
-  // TODO add a little bit of randomness into parent choice to break/restore the
-  // symmetry
-}
-
 // second order point update
 // update the distance from the frozen points
 const double aa         =  9.0/4.0;
@@ -107,18 +84,15 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
     }
   }
 
-  // inherit a value for the branch function at node i:
-  inheritBranchValue(i);
-  // update branch function if a driver mutation is present at site i
-  // AND the mutation is not already accounted for
-  branch_[i] |= drivers_[i];
-
   // TODO instead of choosing a branch_ value out here, get all the neighbours'
   // branch values, and see which one results in the soonest/shortest
   // time/distance.
 
   try {
     double res = solveQuadratic(i,a,b,c);
+    // update branch function if a driver mutation is present at site i
+    // AND the mutation is not already accounted for
+    branch_[i] |= drivers_[i];
     return res;
   } catch (std::runtime_error & err) {
     //if the determinant is negative, we try to reach the voxel with one dimension less and take the minimum
@@ -139,10 +113,26 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
       return std::numeric_limits<double>::infinity();
       //All the derivates with different dimensionalities are 0
     }
+    // update branch function if a driver mutation is present at site i
+    // AND the mutation is not already accounted for
+    branch_[i] |= drivers_[i];
     return *std::min_element(sols.begin(), sols.end());
   }
 }
 
+vector<unsigned int> travelTimeMarcherGenes::get_neighbouring_branch_values(int site) {
+  vector<unsigned int> neighbouring_branch_values;
+  for (int dim=0; dim<dim_; dim++) {
+    for (int j=-1; j<2; j+=2) // each direction (e.g. left and right)
+    {
+      int naddr = _getN(site, dim, j, Mask); // get the neighbour of i along dim
+      if ((naddr!=-1) && (flag_[naddr]==Frozen)) {
+        neighbouring_branch_values.push_back(branch_[naddr]);
+      }
+    }
+  }
+  return neighbouring_branch_values;
+}
 
 double travelTimeMarcherGenes::solveQuadratic(int i, const double &a,
                                          const double &b,
@@ -155,16 +145,21 @@ double travelTimeMarcherGenes::solveQuadratic(int i, const double &a,
   // neighbours is like varying the path near the end-point (when the end-point
   // is near a caustic/boundary).
 
-  c -= 1/pow(speeds_[branch_[i] * size_ + i], 2);
-  // TODO change to something like speeds_[index(branch, i)]?
-  double r0 = 0;
-  double det = pow(b, 2) - 4 * a * c;
-  if (det >= 0)
-  {
-    r0 = (-b + sqrt(det)) / 2.0 / a;
+  vector<unsigned int> branch_values = get_neighbouring_branch_values(i);
+  double r0 = maxDouble;
+  for (auto& branch : branch_values) {
+    double c2 = c;
+    c2 -= 1/pow(speeds_[branch * size_ + i], 2);
+    double det = pow(b, 2) - 4 * a * c2;
+    if (det >= 0)
+    {
+      if ((-b + sqrt(det)) / 2.0 / a < r0){
+        r0 = (-b + sqrt(det)) / 2.0 / a;
+        branch_[i] = branch;
+      }
+    }
   }
-  else
-  {
+  if (r0 >= maxDouble) {
     throw std::runtime_error("Negative discriminant in (genetic) time marcher quadratic.");
   }
   return r0;
