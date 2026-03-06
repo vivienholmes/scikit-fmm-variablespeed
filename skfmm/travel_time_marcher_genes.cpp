@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>    // std::min_element, std::max_element
+using std::vector;
 
 
 void travelTimeMarcherGenes::initalizeFrozen()
@@ -100,7 +101,7 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
       //end of the recursion, use inf so that it is discarded selecting the minimum
       return std::numeric_limits<double>::infinity(); 
     }
-    std::vector<double> sols;
+    vector<double> sols;
     for (int ind=0; ind<dim_; ind++){
       //remove one dimension more than what we are already doing
       std::set<int> tempset = avoid_dim;
