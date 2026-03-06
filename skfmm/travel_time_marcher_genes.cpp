@@ -114,9 +114,6 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
       return std::numeric_limits<double>::infinity();
       //All the derivates with different dimensionalities are 0
     }
-    // update branch function if a driver mutation is present at site i
-    // AND the mutation is not already accounted for
-    branch_[i] |= drivers_[i];
     return *std::min_element(sols.begin(), sols.end());
   }
 }
