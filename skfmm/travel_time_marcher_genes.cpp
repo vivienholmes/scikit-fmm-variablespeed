@@ -10,9 +10,6 @@
 #include <map>
 using std::vector;
 
-#include <iostream>
-
-
 void travelTimeMarcherGenes::initalizeFrozen()
 {
   distanceMarcher::initalizeFrozen();
@@ -141,14 +138,6 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
       // AND the mutation is not already accounted for
       branch_[i] |= drivers_[i];
       tau_values[branch] = *std::min_element(sols.begin(), sols.end());
-    }
-  }
-
-  // DEBUG:
-  if (branch_values.size() > 1) {
-    for (auto& branch : branch_values) {
-      std::cout << branch << " ";
-      std::cout << tau_values[branch] << std::endl;
     }
   }
 

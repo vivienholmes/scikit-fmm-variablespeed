@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 #plt.rcParams['text.usetex'] = True
 
 # resolution of grid for plots:
-resolution = 400
+resolution = 2000
 # real/"physical" length of plot ranges:
 x_width = 6.0
 y_width = 6.0
