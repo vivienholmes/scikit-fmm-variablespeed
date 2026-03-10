@@ -144,9 +144,10 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
     }
   }
 
+  // DEBUG:
   if (branch_values.size() > 1) {
     for (auto& branch : branch_values) {
-      std::cout << branch << std::endl;
+      std::cout << branch << " ";
       std::cout << tau_values[branch] << std::endl;
     }
   }
@@ -159,6 +160,10 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
       best_tau = tau;
     }
   }
+  // update branch function if a driver mutation is present at site i
+  // AND the mutation is not already accounted for
+  branch_[i] |= drivers_[i];
+
   return best_tau;
 }
 
