@@ -145,8 +145,8 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
   }
 
   if (branch_values.size() > 1) {
-    std::cout << branch_values << std::endl;
     for (auto& branch : branch_values) {
+      std::cout << branch << std::endl;
       std::cout << tau_values[branch] << std::endl;
     }
   }
