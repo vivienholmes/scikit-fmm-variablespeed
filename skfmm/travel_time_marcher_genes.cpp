@@ -10,6 +10,8 @@
 #include <map>
 using std::vector;
 
+#include <iostream>
+
 
 void travelTimeMarcherGenes::initalizeFrozen()
 {
@@ -140,6 +142,11 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
       branch_[i] |= drivers_[i];
       tau_values[branch] = *std::min_element(sols.begin(), sols.end());
     }
+  }
+
+  if (branch_values.size() > 1) {
+    std::cout << branch_values << std::endl;
+    std::cout << tau_values << std::endl;
   }
 
   // look through the map of b and tau values and return the minimal tau 
