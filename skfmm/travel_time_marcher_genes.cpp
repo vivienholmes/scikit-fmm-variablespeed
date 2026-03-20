@@ -10,6 +10,8 @@
 #include <map>
 using std::vector;
 
+#include <cstdio>
+
 void travelTimeMarcherGenes::initalizeFrozen()
 {
   distanceMarcher::initalizeFrozen();
@@ -153,6 +155,8 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
   }
   // update branch function if a driver mutation is present at site i
   // AND the mutation is not already accounted for
+
+  std::printf("%d\n", branch_[i]);
   branch_[i] |= drivers_[i];
 
   return best_tau;

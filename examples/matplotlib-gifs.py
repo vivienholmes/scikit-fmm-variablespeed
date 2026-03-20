@@ -7,7 +7,7 @@ from matplotlib import cm
 
 
 # resolution of grid for plots:
-taps = 1000
+taps = 200
 x_width = 2.0
 y_width = 2.0
 
