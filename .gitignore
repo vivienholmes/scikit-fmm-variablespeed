@@ -18,3 +18,4 @@ Session.vim
 test/*
 *.png
 examples/*.txt
+*.gif
