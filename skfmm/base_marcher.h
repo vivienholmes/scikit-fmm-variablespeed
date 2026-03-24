@@ -1,5 +1,6 @@
 //base_marcher.h
-#pragma once
+#ifndef BASEMARCHER_H
+#define BASEMARCHER_H
 const unsigned int MaximumDimension  = 12;
 const char Far    = 0;
 const char Narrow = 1;
@@ -102,3 +103,4 @@ protected:
 };
 
 } // extern "C"
+#endif // BASEMARCHER_H

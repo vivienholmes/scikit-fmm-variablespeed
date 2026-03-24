@@ -18,7 +18,7 @@ phi = (X)**2+(Y)**2
 drivers = {1: [1.0, 0]} # a dictionary with n entries
 v_spd = 1.555 # TODO speeds smaller than 3ish appear to create weird artifacts
 # for low speeds, fewer steps (and bigger dx values) appear to be better?
-speeds = [np.ones((resolution+1, resolution+1)), 
+speeds = [0.2 * np.cos(4 * X) * np.cos(4 * Y) + 1.0, 
           v_spd * np.ones((resolution+1, resolution+1))] # a list of 2^n speed functions
 # variable speeds?
 
@@ -36,26 +36,5 @@ ax[1].set_title('branch')
 ax[1].pcolormesh(X, Y, bfield)
 ax[1].set_aspect(1)
 
-# Draw Tibor's analytical curve for comparison
-beta = np.sqrt(v_spd**2 - 1) # theoretical curve
-theta = np.linspace(0, np.pi, 100)
-x_spiral = np.exp(theta / beta) * np.cos(theta)
-y_spiral = np.exp(theta / beta) * np.sin(theta)
-
-plt.xticks([]); plt.yticks([])
-
-# first on the tau plot:
-ax[0].plot(x_spiral, y_spiral, 'r--')
-ax[0].plot(x_spiral, -y_spiral, 'r--')
-ax[0].set_xlim(-0.5 * x_width, +0.5 * x_width)
-ax[0].set_ylim(-0.5 * y_width, +0.5 * y_width)
-
-# then on the branch plot:
-
-ax[1].plot(x_spiral, y_spiral, 'r--')
-ax[1].plot(x_spiral, -y_spiral, 'r--')
-ax[1].set_xlim(-0.5 * x_width, +0.5 * x_width)
-ax[1].set_ylim(-0.5 * y_width, +0.5 * y_width)
-
 #fig.show()
-plt.savefig("testgraph2.png")
+plt.savefig("testgraph3.png")

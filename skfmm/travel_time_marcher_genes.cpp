@@ -120,6 +120,7 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
       if (avoid_dim.size() == (size_t)dim_) {
         //end of the recursion, use inf so that it is discarded selecting the minimum
         tau_values[branch] = std::numeric_limits<double>::infinity(); 
+        continue;
       }
       vector<double> sols;
       for (int ind=0; ind<dim_; ind++){
@@ -133,6 +134,7 @@ double travelTimeMarcherGenes::updatePointOrderTwo(int i, std::set<int>avoid_dim
       if (sols.size()==0) {
         tau_values[branch] = std::numeric_limits<double>::infinity();
         //All the derivates with different dimensionalities are 0
+        continue;
       }
       // update branch function if a driver mutation is present at site i
       // AND the mutation is not already accounted for
