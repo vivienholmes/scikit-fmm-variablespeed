@@ -539,27 +539,33 @@ def testing():
     >>> np.testing.assert_allclose(travel_time_genes([0, 1, 1, 1, 1],
     ...                                 drivers={}, speeds=[[2, 2, 2, 2, 2]])[0],
     ...                                        [0, 0.5, 1.0, 1.5, 2.0])
-    >>> np.testing.assert_array_equal(travel_time_genes([1, 0, -1],
-    ...                                 drivers={}, speeds=[[2, 2, 2]])[0],
-    ...                                           [0.5, 0, 0.5])
-    >>> np.testing.assert_allclose(travel_time_genes([0, 1, 1, 1, 1],
-    ...                                      drivers={1: [1,0]},
-    ...                                       speeds=[[2, 2, 2, 2, 2], [4, 4, 4, 4, 4]])[0],
-    ...                            [0, 0.5, 1.0, 1.5, 1.83333])
-    >>> np.testing.assert_allclose(travel_time_genes([0, 1, 1, 1, 1],
-    ...                                      drivers={1: [1,0], 2: [3, 0]},
-    ...                                       speeds=[[2, 2, 2, 2, 2], 
-    ...                                               [0, 4, 4, 4, 4],
-    ...                                               [0, 1, 1, 1, 1],
-    ...                                               [0, 6, 6, 6, 6]])[0],
-    ...                            [0, 0.5, 0.8333, 1.111, 1.125])
-    >>> np.testing.assert_allclose(travel_time_genes([[0, 1], [1, 1]],
-    ...                                      drivers={1: [0,1], 2: [1, 1]}, 
-    ...                                      speeds=[[2,2,2,2],
-    ...                                              [4,4,4,4],
-    ...                                              [5,5,5,5],
-    ...                                              [6,6,6,6]])[0],
-    ...                            [[0, 0.5], [0.5, 0.75]])
+    >>> tau, branches = travel_time_genes([1, 0, -1], drivers={}, speeds=[[2, 2, 2]])
+    >>> np.testing.assert_array_equal(tau, [0.5, 0, 0.5])
+    >>> tau, branches = travel_time_genes([0, 1, 1, 1, 1],
+    ...                                   drivers={1: [1]},
+    ...                                   speeds=[[2, 2, 2, 2, 2], [4, 4, 4, 4, 4]])
+    >>> np.testing.assert_allclose(tau, [0, 0.5, 1.0, 1.25, 1.50])
+
+    >>> tau, branches = travel_time_genes([0, 1, 1, 1, 1],
+    ...                                   drivers={1: [1], 2: [3]},
+    ...                                   speeds=[[2, 2, 2, 2, 2], 
+    ...                                           [0, 4, 4, 4, 4],
+    ...                                           [0, 1, 1, 1, 1],
+    ...                                           [0, 6, 6, 6, 6]])
+    >>> np.testing.assert_allclose(tau, [0, 0.5, 1.0, 1.25, 1.5])
+
+    >>> tau, branches = travel_time_genes([[0, 1, 1],
+    ...                                    [1, 1, 1], 
+    ...                                    [1, 1, 1]],
+    ...                                   drivers={1: [0, 1], 2: [1, 1]}, 
+    ...                                   speeds=[[2] * 9,
+    ...                                           [4] * 9,
+    ...                                           [5] * 9,
+    ...                                           [6] * 9])
+    >>> print(tau)
+    >>> print(branches)
+    >>> np.testing.assert_allclose(tau, [[0, 0.5, 1.0], [0.5, 0.5 + 0.5 * np.sqrt(0.5), 1.0], 
+    ...                            [0.75, 0.92, 1.10]])
 
     Travel time tests 2
 
