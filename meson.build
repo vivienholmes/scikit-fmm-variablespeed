@@ -1,5 +1,5 @@
 project('skfmm', 'cpp', version: '2025.06.23')
-
+add_global_arguments('-g',language:'cpp')
 py = import('python').find_installation()
 
 incdir_numpy = meson.get_external_property('numpy-include-dir', 'not-given')
