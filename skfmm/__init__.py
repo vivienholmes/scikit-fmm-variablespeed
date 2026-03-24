@@ -41,11 +41,14 @@ skfmm.extension_velocities(phi, speed, dx=1.0, self_test=False,
 :Copyright: Copyright 2025 The scikit-fmm team.
 :License: BSD-style license. See LICENSE.txt in the source directory.
 
+TODO: describe this as a fork! @viv
+        - chay
+
 """
 
 from __future__ import print_function
 
-__version__ = "2025.06.23"
+__version__ = "2026.03.24"
 __docformat__ = 'restructuredtext'
 
 from .pfmm import distance, travel_time, travel_time_genes, extension_velocities
