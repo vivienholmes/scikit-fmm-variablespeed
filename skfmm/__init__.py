@@ -540,7 +540,7 @@ def testing():
     Travel time genes tests 1
 
     >>> np.testing.assert_allclose(travel_time_genes([0, 1, 1, 1, 1],
-    ...                                 drivers={}, speeds=[[2, 2, 2, 2, 2]])[0],
+    ...                                 drivers={}, speeds=[[200000000, 2, 2, 2, 2]])[0],
     ...                                        [0, 0.5, 1.0, 1.5, 2.0])
     >>> tau, branches = travel_time_genes([1, 0, -1], drivers={}, speeds=[[2, 2, 2]])
     >>> np.testing.assert_array_equal(tau, [0.5, 0, 0.5])
@@ -571,7 +571,9 @@ def testing():
     >>> print(branches)
     >>> np.testing.assert_allclose(tau, [[0, 0.5, 1.0], [0.5, 0.5 + 0.5 * np.sqrt(0.5), 1.0], 
     ...                            [0.75, 0.92, 1.10]])
-
+    >>> tau, branches = travel_time_genes([[[0,1],[1,1]],[[1,1],[1,1]]],drivers={},speeds=[[1]*9])
+    >>> np.testing.assert_allclose(tau[0],[[0,1],[1,1.707107]],atol=0.000001)
+    >>> np.testing.assert_allclose(tau[1],[[1,1.707107],[1.707107,2.284457]],atol=0.000001)
     Travel time tests 2
 
     >>> phi   = [1, 1, 1, -1, -1, -1]
