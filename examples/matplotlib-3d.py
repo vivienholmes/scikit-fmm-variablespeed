@@ -22,6 +22,10 @@ num_branches = 2 ** num_drivers
 
 print(drivers)
 
+# add white noise to speeds:
+sigma = 0.03 # noise loudness
+speeds = [np.random.normal(speed, sigma) for speed in speeds]
+
 tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps)
 
 plt.figure()
@@ -31,7 +35,7 @@ time_max =  1.5
 time_steps = np.linspace(time_min,time_max,num_frames)
 frames = []
 
-middle = int(taps / 2)
+middle = int(2 * taps / 3)
 
 for time_threshold in time_steps:
 	fig,ax=plt.subplots(dpi=80,figsize=(12,12))
