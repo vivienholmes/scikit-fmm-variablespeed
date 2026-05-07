@@ -12,14 +12,16 @@ y_width = 2.0
 plt.figure()
 X, Y = np.meshgrid(np.linspace(-0.5 * x_width, +0.5 * x_width, taps + 1), 
                    np.linspace(-0.5 * y_width, +0.5 * y_width, taps + 1))
-phi = (X)**2+(Y)**2
+phi = (Y)**2
 drivers = {1: [0.5, 0], 2: [-0.2,0.3], 4: [-0.4,0.6]} # a dictionary with n entries
 speeds = [1+X**4, 4+X**4, 3+X**4, 7*X**4,2+X**4,3+X**4,4+X**4,5+X**4] # a list of 2^n speed functions
 num_drivers = len(drivers)
 num_branches = 2 ** num_drivers
 
 print(drivers)
-
+# add white noise to speeds:
+sigma = 0.03 # noise loudness
+speeds = [np.random.normal(speed, sigma) for speed in speeds]
 tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps)
 
 plt.figure()
