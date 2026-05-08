@@ -7,39 +7,54 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # resolution of grid for plots:
 taps = 100
-x_width = 2.0
-y_width = 2.0
-z_width = 2.0
-
+x_width = 5.0
+y_width = 5.0
+z_width = 5.0
 plt.figure()
 X, Y, Z = np.meshgrid(np.linspace(-0.5 * x_width, +0.5 * x_width, taps + 1), 
                    np.linspace(-0.5 * y_width, +0.5 * y_width, taps + 1),
 		   np.linspace(-0.5 * z_width, +0.5 * z_width, taps + 1))
-phi = (X)**2+(Y)**2+(Z)**2
-drivers = {1: [0.1, 0, 0.5], 2: [-0.2, 0.3, -0.2]} # a dictionary with n entries
-speeds = [1+X**4, 4+X**4, 3+X**4, 7*X**4] # a list of 2^n speed functions
+phi = 0.02-(X)**2 - Y**2 - Z**2
+drivers = {1: [0.5, 0.05, 0.01], 2: [-0.5, 0.1, -0.1],4: [-0.1,-0.1,-0.1]} # a dictionary with n entries
+base_speeds = [1+X**2, 2+X**2, 3+X**2, 4+X**2, 5+Z**2,6+Z**2,7+Z**2,8+Z**2] # a list of 2^n speed functions
 num_drivers = len(drivers)
 num_branches = 2 ** num_drivers
-
 print(drivers)
 
+coordinates = []
+for x in range(taps):
+	for y in range(taps):
+		for z in range(taps):
+			coordinates.append((x,y,z))
+inverse_cylinder = [(x,y,z) for (x,y,z) in coordinates if abs((x-0.5*taps)**2+(y-0.5*taps)**2-40) > 30]
+
+for (x,y,z) in inverse_cylinder:
+	for i in range(num_branches):
+		base_speeds[i][x][y][z] /= 3
+
+
 # add white noise to speeds:
-sigma = 0.03 # noise loudness
-speeds = [np.random.normal(speed, sigma) for speed in speeds]
+sigma = 0.12 # noise loudness
+speeds = [np.random.normal(speed, sigma) for speed in base_speeds]
+#for (x,y,z) in inverse_cylinder:
+#	for i in range(num_branches):
+#		if x * y * z == 0 or max([x,y,z]) >= taps:
+#			speeds[i][x][y][z] = 0
 
 tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps)
 
 plt.figure()
-num_frames = 50
+num_frames = 30
+rotation_speed = 360/num_frames
 time_min = 0
-time_max =  1.5
+time_max =  0.8
 time_steps = np.linspace(time_min,time_max,num_frames)
 frames = []
 
 middle = int(2 * taps / 3)
 
-for time_threshold in time_steps:
-    fig = plt.figure(dpi=80, figsize=(12, 12))
+for frame_id, time_threshold in enumerate(time_steps):
+    fig = plt.figure(dpi=80, figsize=(16, 16))
     ax = fig.add_subplot(111, projection='3d')
     
     # Create a masked array for current state
@@ -67,19 +82,25 @@ for time_threshold in time_steps:
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     ax.set_title(f'Elapsed time: {time_threshold:.2f}')
-    
-    # Save frame to buffer
+    ax.legend()
+
+    azimuth = frame_id * rotation_speed
+    elevation = 20
+    ax.view_init(elev=elevation, azim=azimuth)
+#Save frame to buffer
     buf = io.BytesIO()
     fig.savefig(buf, format='png', bbox_inches='tight', dpi=80)
     buf.seek(0)
     frames.append(Image.open(buf).convert('RGB'))
     plt.close(fig)
-    
+
     print(f"Frame {len(frames)}/{num_frames}")
 
 # Save as GIF
 frames[0].save('travel_time_3d.gif', save_all=True, append_images=frames[1:], 
                duration=250, loop=0)
+
+
 
 plt.subplot(121)
 #plt.title("Zero-contour of phi")
