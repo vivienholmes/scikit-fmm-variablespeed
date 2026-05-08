@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import io
+from mpl_toolkits.mplot3d import Axes3D
 
 # resolution of grid for plots:
 taps = 100
@@ -38,19 +39,47 @@ frames = []
 middle = int(2 * taps / 3)
 
 for time_threshold in time_steps:
-	fig,ax=plt.subplots(dpi=80,figsize=(12,12))
-	ax.contour(tau[:,:,middle].squeeze(),levels=[time_threshold],colors=['red'],linewidths=2.5)
-	current_bfield = bfield.copy()
-	current_bfield[tau > time_threshold] = num_branches + 1
-	ax.contourf(current_bfield[:,:,middle].squeeze(),levels=num_branches)
-	ax.set_title(f'Elapsed time: {time_threshold:.2f}')
-	buf = io.BytesIO()
-	fig.savefig(buf,format='png',bbox_inches='tight',dpi=80)
-	buf.seek(0)
-	frames.append(Image.open(buf).convert('RGB'))
-	plt.close(fig)
+    fig = plt.figure(dpi=80, figsize=(12, 12))
+    ax = fig.add_subplot(111, projection='3d')
+    
+    # Create a masked array for current state
+    current_bfield = bfield.copy()
+    current_bfield[tau > time_threshold] = num_branches + 1
+    
+    # Plot voxels for each subregion
+    # This is slow but shows all subregions with different colors
+    for region_id in np.unique(current_bfield):
+        if region_id == num_branches + 1:  # skip "outside" region
+            continue
+        
+        # Get coordinates where this region exists
+        coords = np.argwhere(current_bfield == region_id)
+        
+        if len(coords) > 0:
+            ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2],
+                      s=1, alpha=0.6, label=f'Region {int(region_id)}')
+    
+    # Set equal aspect ratio and limits
+    ax.set_xlim([0, taps])
+    ax.set_ylim([0, taps])
+    ax.set_zlim([0, taps])
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title(f'Elapsed time: {time_threshold:.2f}')
+    
+    # Save frame to buffer
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', bbox_inches='tight', dpi=80)
+    buf.seek(0)
+    frames.append(Image.open(buf).convert('RGB'))
+    plt.close(fig)
+    
+    print(f"Frame {len(frames)}/{num_frames}")
 
-frames[0].save('travel_time_slice.gif',save_all=True,append_images=frames[1:],duration=150,loop=0)
+# Save as GIF
+frames[0].save('travel_time_3d.gif', save_all=True, append_images=frames[1:], 
+               duration=250, loop=0)
 
 plt.subplot(121)
 #plt.title("Zero-contour of phi")
