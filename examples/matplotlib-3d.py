@@ -65,15 +65,10 @@ for frame_id, time_threshold in enumerate(time_steps):
     current_bfield = bfield.copy()
     current_bfield[tau > time_threshold] = num_branches + 1
     
-    # Plot voxels for each subregion
-    # This is slow but shows all subregions with different colors
     for region_id in np.unique(current_bfield):
         if region_id >= num_branches + 1:  # skip "outside" region
             continue
-        
-        # Get coordinates where this region exists
         coords = np.argwhere(current_bfield == region_id)
-        
         if len(coords) > 0:
             ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2],
                       s=1, alpha=0.6, color=region_colours[int(region_id)], label=f'Region {int(region_id)}')

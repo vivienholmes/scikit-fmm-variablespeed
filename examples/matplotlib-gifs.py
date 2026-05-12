@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import io
+from matplotlib import cm
+
 
 # resolution of grid for plots:
 taps = 1000
@@ -31,12 +33,15 @@ time_max =  0.8
 time_steps = np.linspace(time_min,time_max,num_frames)
 frames = []
 
+cmap = cm.get_cmap('tab20')
+region_colours = {region_id: cmap(region_id % cmap.N) for region_id in range(num_branches)}
+
 for time_threshold in time_steps:
 	fig,ax=plt.subplots(dpi=80,figsize=(12,12))
 	ax.contour(tau,levels=[time_threshold],colors=['red'],linewidths=2.5)
 	current_bfield = bfield.copy()
 	current_bfield[tau > time_threshold] = num_branches + 1
-	ax.contourf(current_bfield,levels=num_branches)
+	ax.contourf(current_bfield,cmap=cmap,levels=num_branches)
 	ax.set_title(f'Elapsed time: {time_threshold:.2f}')
 	buf = io.BytesIO()
 	fig.savefig(buf,format='png',bbox_inches='tight',dpi=80)
