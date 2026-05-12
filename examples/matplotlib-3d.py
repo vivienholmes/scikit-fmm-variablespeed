@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import io
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 # resolution of grid for plots:
 taps = 100
@@ -53,6 +54,9 @@ frames = []
 
 middle = int(2 * taps / 3)
 
+cmap = cm.get_cmap('tab20')
+region_colours = {region_id: cmap(region_id % cmap.N) for region_id in range(num_branches)}
+
 for frame_id, time_threshold in enumerate(time_steps):
     fig = plt.figure(dpi=80, figsize=(16, 16))
     ax = fig.add_subplot(111, projection='3d')
@@ -64,7 +68,7 @@ for frame_id, time_threshold in enumerate(time_steps):
     # Plot voxels for each subregion
     # This is slow but shows all subregions with different colors
     for region_id in np.unique(current_bfield):
-        if region_id == num_branches + 1:  # skip "outside" region
+        if region_id >= num_branches + 1:  # skip "outside" region
             continue
         
         # Get coordinates where this region exists
@@ -72,7 +76,7 @@ for frame_id, time_threshold in enumerate(time_steps):
         
         if len(coords) > 0:
             ax.scatter(coords[:, 0], coords[:, 1], coords[:, 2],
-                      s=1, alpha=0.6, label=f'Region {int(region_id)}')
+                      s=1, alpha=0.6, color=region_colours[int(region_id)], label=f'Region {int(region_id)}')
     
     # Set equal aspect ratio and limits
     ax.set_xlim([0, taps])
