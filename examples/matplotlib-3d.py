@@ -15,7 +15,8 @@ plt.figure()
 X, Y, Z = np.meshgrid(np.linspace(-0.5 * x_width, +0.5 * x_width, taps + 1), 
                    np.linspace(-0.5 * y_width, +0.5 * y_width, taps + 1),
 		   np.linspace(-0.5 * z_width, +0.5 * z_width, taps + 1))
-phi = 0.02-(X)**2 - Y**2 - Z**2
+phi = 1+X*0
+#(X-0.5)**2 + (Y-0.5)**2 + Z**2
 drivers = {1: [0.5, 0.05, 0.01], 2: [-0.5, 0.1, -0.1],4: [-0.1,-0.1,-0.1]} # a dictionary with n entries
 base_speeds = [1+X**2, 2+X**2, 3+X**2, 4+X**2, 5+Z**2,6+Z**2,7+Z**2,8+Z**2] # a list of 2^n speed functions
 num_drivers = len(drivers)
@@ -23,19 +24,23 @@ num_branches = 2 ** num_drivers
 print(drivers)
 
 coordinates = []
+inverse_cylinder = []
 for x in range(taps):
 	for y in range(taps):
 		for z in range(taps):
 			coordinates.append((x,y,z))
-inverse_cylinder = [(x,y,z) for (x,y,z) in coordinates if abs((x-0.5*taps)**2+(y-0.5*taps)**2-40) > 30]
+			if abs((x-0.5*taps)**2+(y-0.5*taps)**2 - 40) > 10:
+				inverse_cylinder.append((x,y,z))
+			if abs((x - 0.5*taps)**2 + (y-0.5*taps)**2 + (z - 0.5*taps)**2 - 20) < 5:
+				phi[x][y][z] = 0
 
 for (x,y,z) in inverse_cylinder:
 	for i in range(num_branches):
-		base_speeds[i][x][y][z] /= 3
+		base_speeds[i][x][y][z] /= 4
 
 
 # add white noise to speeds:
-sigma = 0.12 # noise loudness
+sigma = 0.04 # noise loudness
 speeds = [np.random.normal(speed, sigma) for speed in base_speeds]
 #for (x,y,z) in inverse_cylinder:
 #	for i in range(num_branches):
@@ -46,9 +51,9 @@ tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps)
 
 plt.figure()
 num_frames = 30
-rotation_speed = 360/num_frames
+rotation_speed = 180/num_frames
 time_min = 0
-time_max =  0.8
+time_max =  2.5
 time_steps = np.linspace(time_min,time_max,num_frames)
 frames = []
 
