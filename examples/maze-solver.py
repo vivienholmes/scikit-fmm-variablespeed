@@ -6,7 +6,7 @@ import io
 from matplotlib import cm
 
 
-def add_maze_wall(a,b,speeds,epsilon):
+def add_maze_wall(a,b,speeds,taps,epsilon):
 	dsq_ab = (a[0]-b[0])**2 + (a[1]-b[1])**2
 	wall_points = []
 	for x in range(taps):
@@ -17,7 +17,7 @@ def add_maze_wall(a,b,speeds,epsilon):
 	for (x,y) in wall_points:
 		for i in range(len(speeds)):
 			speeds[i][x][y] = 0
-	
+
 	return speeds
 
 # resolution of grid for plots:
@@ -41,7 +41,7 @@ speeds = [np.random.normal(speed, sigma) for speed in speeds]
 tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps)
 bfield_max = bfield.max()
 
-add_maze_wall((100,100),(100,900),speeds, 5)
+speeds = add_maze_wall((taps*0.3,taps*0.3),(taps*0.3,taps*0.6),speeds,taps,100)
 
 plt.figure()
 num_frames = 50
