@@ -7,10 +7,45 @@ from matplotlib import cm
 
 from scipy.interpolate import RegularGridInterpolator
 
+def cartesian_to_rowcol(cartesian,x_width,taps):
+     return [int(index + (x_width / 2)*taps) for index in cartesian]
+
+def calculate_gradients(tau, bfield,dx,drivers):
+    drivers_points = [cartesian_to_rowcol(index) for index in drivers.values()]
+    ndim = np.ndarray.ndim(tau)
+    gradient = [tau * np.nan] * ndim
+    for indices,tau_value in np.ndenumerate(tau):
+       for dim in range(ndim):
+           for delta_index in [-1,1]:
+               #for each neighbour on side delta_index in dimension dim of tau_value in indices
+               neighbouring_indices = indices
+               neighbouring_indices[dim] += delta_index
+               if tau[neighbouring_indices] < tau[indices]:
+                   # either we are looking at a normal point or a new driver mutation: 
+                   # if the first, we only care about (older) neighbours with the same b value,
+                   # if the second, we care about all its relevant neighbours
+                   if bfield[neighbouring_indices] == bfield[indices] or indices in drivers_points:
+                       gradient[dim][indices] = (tau_value - tau[neighbouring_indices])/dx
+    return gradient                 
+                     
+def retrace_phylogenies(gradients, descendent, speeds, bfield, tau, tau_min=0, step=0.1):
+    descendent_indices = cartesian_to_rowcol(descendent)
+    ancestors = [descendent]
+    current_point = descendent
+    current_indices = descendent_indices
+    while tau[current_indices] > tau_min:
+       gradient_at_point = gradients[current_indices]
+       gradient_descent = - speeds[bfield[current_indices]][current_indices] ** 2 * step * gradient_at_point
+       current_point += gradient_descent
+       current_indices = cartesian_to_rowcol(current_point)
+       ancestors.append(current_point)
+    return ancestors
+
 # resolution of grid for plots:
 taps = 1000
 x_width = 2.0
 y_width = 2.0
+dx=x_width/taps
 
 plt.figure()
 X, Y = np.meshgrid(np.linspace(-0.5 * x_width, +0.5 * x_width, taps + 1), 
@@ -25,8 +60,12 @@ print(drivers)
 # add white noise to speeds:
 sigma = 0.03 # noise loudness
 speeds = [np.random.normal(speed, sigma) for speed in speeds]
-tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps)
+tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=dx)
 bfield_max = bfield.max()
+
+gradients = calculate_gradients(tau,bfield,dx)
+retrace_phylogenies(gradients, [-1,-1])
+
 
 plt.figure()
 num_frames = 50
@@ -42,6 +81,7 @@ for time_threshold in time_steps:
 	current_bfield[tau > time_threshold] = np.ma.masked
 	ax.contourf(current_bfield,levels=num_branches,vmin=0,vmax=bfield_max)
 	ax.set_title(f'Elapsed time: {time_threshold:.2f}')
+     
 	buf = io.BytesIO()
 	fig.savefig(buf,format='png',bbox_inches='tight',dpi=80)
 	buf.seek(0)
@@ -49,38 +89,6 @@ for time_threshold in time_steps:
 	plt.close(fig)
 
 frames[0].save('travel_time.gif',save_all=True,append_images=frames[1:],duration=250,loop=0)
-
-# before plotting phi, tau and branch, choose a point and retrace its line of
-# descent
-
-def retrace_line_of_descent(child, tau):
-    # child is the chosen point. what is its tau value (time of arrival)?
-    # assuming that initial time=0, parametrise the line with 0 < time < tau
-    grad_y, grad_x = np.gradient(tau)
-
-    # Interpolate gradient at (x, y)    
-    grad_x_interp = RegularGridInterpolator((Y, X), grad_x, method='linear')    
-    grad_y_interp = RegularGridInterpolator((Y, X), grad_y, method='linear')
-
-    ancestor=child
-    learning_rate = 0.01
-    line_of_descent = []
-    time = tau[child] #?
-    epsilon = 0.1
-    while (time > 0 + epsilon): # walk backwards to each of your ancestors
-        x,y = ancestor
-        gx = grad_x_interp([y, x])[0]    
-        gy = grad_y_interp([y, x])[0]        
-        # Update step (move opposite to gradient)    
-        x -= learning_rate * gx    
-        y -= learning_rate * gy
-        ancestor = (x, y)
-        time = tau[ancestor]
-        line_of_descent.append((x,y))
-
-    return line_of_descent
-
-descent1 = retrace_line_of_descent((0.75,0.75), tau)
 
 plt.subplot(121)
 #plt.title("Zero-contour of phi")
