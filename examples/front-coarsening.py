@@ -15,10 +15,10 @@ plt.figure()
 X, Y = np.meshgrid(np.linspace(-0.5 * x_width, +0.5 * x_width, taps + 1), 
                    np.linspace(-0.5 * y_width, +0.5 * y_width, taps + 1))
 phi = X + 1
-drivers = {} # a dictionary with n entries
-speeds = [1+X*0] # a list of 2^n speed functions
+drivers = {1: [-0.8,0], 2: [0.6,-0.2]} # a dictionary with n entries
+speeds = [1+X*0, 1.05+X*0,1.1+X*0,1.5+X*0] # a list of 2^n speed functions
 num_drivers = len(drivers)
-num_branches = 0 ** num_drivers
+num_branches = 2 ** num_drivers
 
 print(drivers)
 # add white noise to speeds:
@@ -49,7 +49,7 @@ for time_threshold in time_steps:
 	frames.append(Image.open(buf).convert('RGB'))
 	plt.close(fig)
 
-frames[0].save('coarse-travel_time.gif',save_all=True,append_images=frames[1:],duration=250,loop=0)
+frames[0].save('coarse-travel_timeb.gif',save_all=True,append_images=frames[1:],duration=250,loop=0)
 
 plt.subplot(121)
 #plt.title("Zero-contour of phi")
@@ -67,4 +67,4 @@ plt.contour(X, Y, tau, 15)
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 
-plt.savefig("coarse-time-and-branches.png")
+plt.savefig("coarse-time-and-branchesb.png")
