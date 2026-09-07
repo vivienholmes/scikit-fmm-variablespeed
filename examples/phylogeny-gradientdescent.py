@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import io
 from matplotlib import cm
+import itertools as it
 
 clamp = lambda x, l, u: l if x < l else u if x > u else x
 
@@ -16,9 +17,11 @@ class Domain:
             self.offset = offset
         self.array_space = np.meshgrid(*[np.linspace(0, dimension, resolution + 1) for dimension in size])
         self.dx = size[0] / resolution
+        self.dim = len(size)
+        self.bilinear_interpolation_matrix = self.set_interpolation_matrix()
 
     def real_to_array(self, real_point):
-        return [round((x[0] - x[1]) / self.dx) for x in zip(real_point, self.offset)]
+        return np.array([round((x[0] - x[1]) / self.dx) for x in zip(real_point, self.offset)])
 
     def array_to_real(self, array_point):
         return array_point*self.dx + self.offset
@@ -26,6 +29,28 @@ class Domain:
     def distance(self, x_real, y_real):
         return np.sqrt(sum([difference**2 for difference in x_real - y_real]))
 
+    def neighbours(self, x):
+        base = self.real_to_array(x)
+        print(base)
+        print(x)
+        neighbours = [base + i for i in list(it.product(range(0,2),repeat=self.dim))]
+        if self.dim == 2:
+            neighbours = [base, base + np.array([1,0]), base + np.array([0,1]), base + np.array([1,1])]
+        if self.dim == 3:
+            neighbours = [base, base + np.array([1,0,0]), base + np.array([0,1,0]), base + np.array([0,0,1]), base + np.array([1,1,0]), base+np.array([1,0,1]), base + np.array([0,1,1]), base+np.array([1,1,1])]
+        print(neighbours)
+        return neighbours
+
+    def set_interpolation_matrix(self):
+        if self.dim == 2:
+            return np.matrix([[1, 0, 0, 0], [-1, 0, 1, 0], [-1, 1, 0, 0],[1, -1, -1, 1]])
+        if self.dim == 3:
+            return np.matrix([[1,0,0,0,0,0,0,0],[-1,1,0,0,0,0,0,0],[-1,0,1,0,0,0,0,0],[-1,0,0,1,0,0,0,0],[1,-1,-1,0,1,0,0,0],[1,-1,0,-1,0,1,0,0],[1,0,-1,-1,0,0,1,0],[-1,1,1,1,-1,-1,-1,1]])
+        return None
+
+    def get_distance_from_grid(self, x_0):
+        base = self.array_to_real(self.real_to_array(x_0))
+        return x_0 - base
 
 
 def calculate_gradients(tau, bfield, domain, drivers, phi):
@@ -57,17 +82,46 @@ def calculate_gradients(tau, bfield, domain, drivers, phi):
                         #print('-----------')
     return gradient
 
-def estimate_gradient(x, domain, tau):
-    return x
+def estimate_gradient(x_0, domain, tau):
+    print('estimating gradient at ' + str(x_0))
+    dx = domain.dx
+    neighbours = domain.neighbours(x_0)
+    neighbouring_taus = {tuple((coordinate - neighbours[0]).tolist()): tau[*coordinate.tolist()] for coordinate in neighbours}
+    print(neighbouring_taus)
+    tau_list = np.array([[x] for x in neighbouring_taus.values()])
+    print(tau_list)
+    polynomial_coefs = (domain.bilinear_interpolation_matrix * np.matrix(tau_list)).tolist()
+    print(polynomial_coefs)
+    coefs = {x:y for x,y in zip(neighbouring_taus.keys(),polynomial_coefs)}
+    print(coefs)
+    estimated_gradient = None
+    residuals = domain.get_distance_from_grid(x_0)
+    print(residuals)
+    x = residuals[0]
+    y = residuals[1]
+    print(x)
+    print(coefs)
+    print(coefs[(1,0)])
+    if domain.dim == 2:
+        estimated_gradient = [coelfs[(1,0)] + coefs[(1,1)]*y,coefs[(0,1)]+coefs[(1,1)]*x]
+    if domain.dim == 3:
+        z = residuals[2]
+        estimated_gradient = [coefs[(1,0,0)] + coefs[(1,1,0)]*y + coefs[(1,0,1)]*z+coefs[(1,1,1)]*y*z,
+                              coefs[(0,1,0)] + coefs[(1,1,0)]*x + coefs[(0,1,1)]*z + coefs[(1,1,1)]*x*z,
+                              coefs[(0,0,1)]+coefs[(1,0,1)]*x + coefs[(0,1,1)]*y + coefs[(1,1,1)]*x*y]
+    return estimated_gradient
 
-def retrace_phylogeny(x, domain, tau, step=0.03):
+def retrace_phylogeny(descendent, domain, tau, step=0.03, tau_min=0.1):
     descendent_indices = domain.real_to_array(descendent)
     current_point = descendent
+    indices = descendent_indices
     ancestors = [descendent]
-    while estimate_tau(current_point, domain, tau) > tau_min:
-        estimated_gradient = estimate_gradient(current_point)
+    print(tau[indices])
+    while tau[*indices] > tau_min:
+        estimated_gradient = estimate_gradient(current_point, domain, tau)
         delta_point = - estimated_gradient * step
         current_point += delta_point
+        indices = domain.real_to_array(current_point)
         ancestors.append(current_point)
     return ancestors
 
@@ -159,28 +213,29 @@ plt.savefig("phylo-time-and-branches.png")
 print('plots done')
 
 
-print('calculating gradients')
-gradients = calculate_gradients(tau,bfield,domain,drivers,phi)
-print(tau)
-print(gradients)
+#print('calculating gradients')
+#gradients = calculate_gradients(tau,bfield,domain,drivers,phi)
+#print(tau)
+#print(gradients)
 
-plt.figure()
-plt.title("X Gradients")
-plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
-plt.contour(X, Y, gradients[0], 15)
-plt.gca().set_aspect(1)
-plt.xticks([]); plt.yticks([])
-plt.savefig("xgradients.png")
+#plt.figure()
+#plt.title("X Gradients")
+#plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
+#plt.contour(X, Y, gradients[0], 15)
+#plt.gca().set_aspect(1)
+#plt.xticks([]); plt.yticks([])
+#plt.savefig("xgradients.png")
 
 
-plt.figure()
-plt.title("Y Gradients")
-plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
-plt.contour(X, Y, gradients[1], 15)
-plt.gca().set_aspect(1)
-plt.xticks([]); plt.yticks([])
-plt.savefig("ygradients.png")
+#plt.figure()
+#plt.title("Y Gradients")
+#plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
+#plt.contour(X, Y, gradients[1], 15)
+#plt.gca().set_aspect(1)
+#plt.xticks([]); plt.yticks([])
+#plt.savefig("ygradients.png")
 
 print('tracinging phlogeny')
-ancestors = retrace_phylogenies(domain, gradients, [0.3,0.3],speeds,bfield,tau,step=0.5)
+ancestors = retrace_phylogeny((0.5,0.5),domain,tau)
+#domain, gradients, [0.3,0.3],speeds,bfield,tau,step=0.5)
 print(ancestors[:5])
