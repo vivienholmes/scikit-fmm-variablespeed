@@ -8,6 +8,7 @@ import itertools as it
 
 clamp = lambda x, l, u: l if x < l else u if x > u else x
 
+
 class Domain:
     def __init__(self, resolution, size, offset=None):
         self.resolution = resolution
@@ -20,6 +21,9 @@ class Domain:
         self.dim = len(size)
         self.bilinear_interpolation_matrix = self.set_interpolation_matrix()
 
+    def periodic_add(self, a, b):
+        return np.mod(a + np.array(b), np.array(self.size) + 1, dtype='i', casting='unsafe')
+
     def real_to_array(self, real_point):
         return np.array([round((x[0] - x[1]) / self.dx) for x in zip(real_point, self.offset)])
 
@@ -31,14 +35,14 @@ class Domain:
 
     def neighbours(self, x):
         base = self.real_to_array(x)
-        print(base)
-        print(x)
+        #print(base)
+        #print(x)
         neighbours = [base + i for i in list(it.product(range(0,2),repeat=self.dim))]
         if self.dim == 2:
-            neighbours = [base, base + np.array([1,0]), base + np.array([0,1]), base + np.array([1,1])]
+            neighbours = [self.periodic_add(base, [0,0]), self.periodic_add(base, [1,0]), self.periodic_add(base, [0,1]), self.periodic_add(base, [1,1])]
         if self.dim == 3:
             neighbours = [base, base + np.array([1,0,0]), base + np.array([0,1,0]), base + np.array([0,0,1]), base + np.array([1,1,0]), base+np.array([1,0,1]), base + np.array([0,1,1]), base+np.array([1,1,1])]
-        print(neighbours)
+        print('neighbours: ' + str(neighbours))
         return neighbours
 
     def set_interpolation_matrix(self):
@@ -51,6 +55,11 @@ class Domain:
     def get_distance_from_grid(self, x_0):
         base = self.array_to_real(self.real_to_array(x_0))
         return x_0 - base
+
+    def is_point_in_grid(self,x_0):
+        for i in x_0:
+            if i > self.resolution or i < 0: return False
+        return True
 
 
 def calculate_gradients(tau, bfield, domain, drivers, phi):
@@ -86,41 +95,39 @@ def estimate_gradient(x_0, domain, tau):
     print('estimating gradient at ' + str(x_0))
     dx = domain.dx
     neighbours = domain.neighbours(x_0)
-    neighbouring_taus = {tuple((coordinate - neighbours[0]).tolist()): tau[*coordinate.tolist()] for coordinate in neighbours}
-    print(neighbouring_taus)
+    neighbouring_taus = {tuple((coordinate - neighbours[0]).tolist()): tau[*coordinate.tolist()] for coordinate in neighbours if domain.is_point_in_grid(coordinate)}
+#    print('neighbouring taus: ' + str(neighbouring_taus))
     tau_list = np.array([[x] for x in neighbouring_taus.values()])
-    print(tau_list)
     polynomial_coefs = (domain.bilinear_interpolation_matrix * np.matrix(tau_list)).tolist()
-    print(polynomial_coefs)
-    coefs = {x:y for x,y in zip(neighbouring_taus.keys(),polynomial_coefs)}
-    print(coefs)
+#    print('polynomial coefficients: ' + str(polynomial_coefs))
+    coefs = {x:y[0] for x,y in zip(neighbouring_taus.keys(),polynomial_coefs)}
+#    print('coefficients: ' + str(coefs))
     estimated_gradient = None
     residuals = domain.get_distance_from_grid(x_0)
-    print(residuals)
+#    print('residuals: ' + str(residuals))
     x = residuals[0]
     y = residuals[1]
-    print(x)
-    print(coefs)
-    print(coefs[(1,0)])
+ #   print(coefs[(1,1)])
+ #   print(y)
     if domain.dim == 2:
-        estimated_gradient = [coelfs[(1,0)] + coefs[(1,1)]*y,coefs[(0,1)]+coefs[(1,1)]*x]
+        estimated_gradient = np.array([coefs[(1,0)] + coefs[(1,1)]*y,coefs[(0,1)]+coefs[(1,1)]*x])
     if domain.dim == 3:
         z = residuals[2]
-        estimated_gradient = [coefs[(1,0,0)] + coefs[(1,1,0)]*y + coefs[(1,0,1)]*z+coefs[(1,1,1)]*y*z,
+        estimated_gradient = np.array([coefs[(1,0,0)] + coefs[(1,1,0)]*y + coefs[(1,0,1)]*z+coefs[(1,1,1)]*y*z,
                               coefs[(0,1,0)] + coefs[(1,1,0)]*x + coefs[(0,1,1)]*z + coefs[(1,1,1)]*x*z,
-                              coefs[(0,0,1)]+coefs[(1,0,1)]*x + coefs[(0,1,1)]*y + coefs[(1,1,1)]*x*y]
+                              coefs[(0,0,1)]+coefs[(1,0,1)]*x + coefs[(0,1,1)]*y + coefs[(1,1,1)]*x*y])
+#    print('gradient: ' + str(estimated_gradient))
     return estimated_gradient
 
 def retrace_phylogeny(descendent, domain, tau, step=0.03, tau_min=0.1):
     descendent_indices = domain.real_to_array(descendent)
     current_point = descendent
     indices = descendent_indices
-    ancestors = [descendent]
-    print(tau[indices])
+    ancestors = [np.array(descendent)]
     while tau[*indices] > tau_min:
         estimated_gradient = estimate_gradient(current_point, domain, tau)
         delta_point = - estimated_gradient * step
-        current_point += delta_point
+        current_point = np.clip(current_point + delta_point, a_min=0, a_max=domain.size[0])
         indices = domain.real_to_array(current_point)
         ancestors.append(current_point)
     return ancestors
@@ -152,22 +159,27 @@ domain = Domain(1000, (2.0,2.0))
 
 plt.figure()
 X, Y = domain.array_space
-phi = X**2 + Y**2
-drivers = {}
-#{1: [1.0, 1.0], 2: [0.2,0.3], 4: [0.6,0.1]} # a dictionary with n entries
-speeds = [1+X*0]
-#, 4+X**4, 3+X**4, 7*X**4,2+X**4,3+X**4,4+X**4,5+X**4] # a list of 2^n speed functions
+phi = X**2
+drivers = {1: [-0.5,-0.5], 2: [-0.2,0.3], 4: [-0.6,-0.1]} # a dictionary with n entries
+speeds = [1+X**4, 2+X**4, 3+X**4, 4*X**4,5+X**4,6+X**4,7+X**4,8+X**4] # a list of 2^n speed functions
 num_drivers = len(drivers)
 num_branches = 2 ** num_drivers
 
 print(drivers)
 # add white noise to speeds:
-sigma = 0.001 # noise loudness
+sigma = 0.01 # noise loudness
 speeds = [np.random.normal(speed, sigma) for speed in speeds]
 print('solving')
 tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=domain.dx)
+print(tau[1,1])
+print(tau[(1,1)])
 bfield_max = bfield.max()
 
+print('tracing phylogeny')
+ancestors = retrace_phylogeny((0.5,0.5),domain,tau,step=10.0)
+ancestors_grid = [domain.real_to_array(x) for x in ancestors]
+print(ancestors[:5])
+print(ancestors[-5:])
 
 print('plotting gif')
 plt.figure()
@@ -182,7 +194,9 @@ for time_threshold in time_steps:
 	ax.contour(tau,levels=[time_threshold],colors=['red'],linewidths=2.5)
 	current_bfield = np.ma.array(bfield.copy())
 	current_bfield[tau > time_threshold] = np.ma.masked
-	ax.contourf(current_bfield,levels=num_branches,vmin=0,vmax=bfield_max)
+	current_ancestors = [x for x in ancestors_grid if tau[tuple(x)] < time_threshold]
+	ax.contourf(current_bfield,levels=num_branches,vmin=0,vmax=bfield_max,zorder=1)
+	ax.plot(*zip(*current_ancestors),zorder=10)
 	ax.set_title(f'Elapsed time: {time_threshold:.2f}') 
 	buf = io.BytesIO()
 	fig.savefig(buf,format='png',bbox_inches='tight',dpi=80)
@@ -197,7 +211,7 @@ print('plotting graphs')
 plt.subplot(121)
 plt.title("branch function")
 plt.contourf(bfield, levels=num_branches)
-#plt.plot(*zip(*ancestors),color="red")
+plt.plot(*zip(*ancestors),color="red")
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 
@@ -205,37 +219,9 @@ plt.subplot(122)
 plt.title("Travel time")
 plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
 plt.contour(X, Y, tau, 15)
-#plt.plot(*zip(*ancestors),color="red")
+plt.plot(*zip(*ancestors),color="red")
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 
 plt.savefig("phylo-time-and-branches.png")
 print('plots done')
-
-
-#print('calculating gradients')
-#gradients = calculate_gradients(tau,bfield,domain,drivers,phi)
-#print(tau)
-#print(gradients)
-
-#plt.figure()
-#plt.title("X Gradients")
-#plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
-#plt.contour(X, Y, gradients[0], 15)
-#plt.gca().set_aspect(1)
-#plt.xticks([]); plt.yticks([])
-#plt.savefig("xgradients.png")
-
-
-#plt.figure()
-#plt.title("Y Gradients")
-#plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
-#plt.contour(X, Y, gradients[1], 15)
-#plt.gca().set_aspect(1)
-#plt.xticks([]); plt.yticks([])
-#plt.savefig("ygradients.png")
-
-print('tracinging phlogeny')
-ancestors = retrace_phylogeny((0.5,0.5),domain,tau)
-#domain, gradients, [0.3,0.3],speeds,bfield,tau,step=0.5)
-print(ancestors[:5])
