@@ -5,79 +5,37 @@ from PIL import Image
 import io
 from matplotlib import cm
 import itertools as it
+from Domain import Domain
 
 clamp = lambda x, l, u: l if x < l else u if x > u else x
 
-
-class Domain:
-    def __init__(self, resolution, size, offset=None):
-        self.resolution = resolution
-        self.size = size
-        self.offset = [0]*len(size)
-        if offset:
-            self.offset = offset
-        self.array_space = np.meshgrid(*[np.linspace(0, dimension, resolution + 1) for dimension in size])
-        self.dx = size[0] / resolution
-        self.dim = len(size)
-        self.bilinear_interpolation_matrix = self.set_interpolation_matrix()
-
-    def periodic_add(self, a, b):
-        return np.mod(a + np.array(b), np.array(self.size) + 1, dtype='i', casting='unsafe')
-
-    def real_to_array(self, real_point):
-        return np.array([round((x[0] - x[1]) / self.dx) for x in zip(real_point, self.offset)])
-
-    def array_to_real(self, array_point):
-        return array_point*self.dx + self.offset
-
-    def distance(self, x_real, y_real):
-        return np.sqrt(sum([difference**2 for difference in x_real - y_real]))
-
-    def neighbours(self, x):
-        base = self.real_to_array(x)
-        #print(base)
-        #print(x)
-        neighbours = [base + i for i in list(it.product(range(0,2),repeat=self.dim))]
-        if self.dim == 2:
-            neighbours = [self.periodic_add(base, [0,0]), self.periodic_add(base, [1,0]), self.periodic_add(base, [0,1]), self.periodic_add(base, [1,1])]
-        if self.dim == 3:
-            neighbours = [base, base + np.array([1,0,0]), base + np.array([0,1,0]), base + np.array([0,0,1]), base + np.array([1,1,0]), base+np.array([1,0,1]), base + np.array([0,1,1]), base+np.array([1,1,1])]
-        print('neighbours: ' + str(neighbours))
-        return neighbours
-
-    def set_interpolation_matrix(self):
-        if self.dim == 2:
-            return np.matrix([[1, 0, 0, 0], [-1, 0, 1, 0], [-1, 1, 0, 0],[1, -1, -1, 1]])
-        if self.dim == 3:
-            return np.matrix([[1,0,0,0,0,0,0,0],[-1,1,0,0,0,0,0,0],[-1,0,1,0,0,0,0,0],[-1,0,0,1,0,0,0,0],[1,-1,-1,0,1,0,0,0],[1,-1,0,-1,0,1,0,0],[1,0,-1,-1,0,0,1,0],[-1,1,1,1,-1,-1,-1,1]])
-        return None
-
-    def get_distance_from_grid(self, x_0):
-        base = self.array_to_real(self.real_to_array(x_0))
-        return x_0 - base
-
-    def is_point_in_grid(self,x_0):
-        for i in x_0:
-            if i > self.resolution or i < 0: return False
-        return True
-
-
 def basic_phylogeny(origin, domain, drivers, beta, tau):
     drivers[0] = origin
-    driver_results = [(position, tau[tuple(domain.real_to_array(position))], beta[tuple(domain.real_to_array(position))]) for (weight, position) in drivers.items()]
+    print(beta)
+    print(beta[tuple(domain.real_to_array([0.3,-0.2]))])
+    print(beta[tuple(domain.real_to_array([-0.1,-0.6]))])
+    print(tau)
+    driver_results = [(position, tau[tuple(domain.real_to_array(position))], beta[tuple(domain.real_to_array(position))]) for position in drivers.values()]
+    print(driver_results)
     parents = []
     for d in driver_results:
         current_position, current_tau, current_beta = d
         best_tau = 0
+#        print(current_position)
         for d2 in driver_results:
             trial_position, trial_tau, trial_beta = d2
-            if trial_beta | current_beta == trial_beta:
+#            print('trial_beta')
+#            print(trial_beta)
+#            print(trial_position)
+            if trial_beta & current_beta == trial_beta:
+#                print('equal')
                 if trial_tau > best_tau:
+#                    print('best')
                     best_tau = trial_tau
                     mrca = trial_position
         parents.append((domain.real_to_array(current_position), domain.real_to_array(mrca)))
+#        print(parents)
     return parents
-
 
 # resolution of grid for plots:
 domain = Domain(1000, (2.0,2.0))
@@ -96,12 +54,11 @@ sigma = 0.01 # noise loudness
 speeds = [np.random.normal(speed, sigma) for speed in speeds]
 print('solving')
 tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=domain.dx)
-print(tau[1,1])
-print(tau[(1,1)])
 bfield_max = bfield.max()
 
 print('tracing phylogeny')
 driver_phylogeny = basic_phylogeny([-1,-1],domain, drivers, bfield, tau)
+print(driver_phylogeny)
 
 print('plotting gif')
 plt.figure()
@@ -132,7 +89,9 @@ plt.subplot(121)
 plt.title("branch function")
 plt.contourf(bfield, levels=num_branches)
 for ancestry in driver_phylogeny:
-    plt.plot(*zip(*ancestry), color="red")
+    print(ancestry)
+    print(*zip(*ancestry))
+    plt.plot(*zip(*ancestry), 'ro-')
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 
