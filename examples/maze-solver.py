@@ -5,15 +5,13 @@ from PIL import Image
 import io
 from matplotlib import cm
 
-<<<<<<< HEAD
-=======
 def rowcol_to_space(x,y,dx,width):
 	return (x*dx + 0.5 * width,0.5 * width-y*dx)
 
 def space_to_rowcol(x,y,dx,width):
 	return (x+0.5*width,y-0.5*width)
 
-def add_maze_wall(a,b,speeds,epsilon):
+def add_maze_wall2(a,b,speeds,epsilon):
 	taps=speeds[0].shape[0]
 	distance_ab = np.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 	wall_points = []
@@ -31,7 +29,6 @@ def add_maze_wall(a,b,speeds,epsilon):
 
 	return speeds
 
->>>>>>> 47ff3bb (add front coarsening test)
 # resolution of grid for plots:
 taps = 1000
 x_width = 2.0
@@ -41,8 +38,8 @@ plt.figure()
 # NB: origin (0,0) should be in the centre of the space:
 X, Y = np.meshgrid(np.linspace(-0.5 * x_width, +0.5 * x_width, taps + 1), 
                    np.linspace(-0.5 * y_width, +0.5 * y_width, taps + 1))
-phi = (Y)**2+(X)**2
-drivers = {1: [0.5, 0], 2: [-0.2,0.3], 4: [-0.4,0.6]} # a dictionary with n entries
+phi = (Y - 1)**2+(X - 1)**2
+drivers = {1: [0.5, 0], 2: [-0.2,0.3], 4: [0.45,0.45]} # a dictionary with n entries
 speeds = [1+X**4, 4+X**4, 3+X**4, 7*X**4,2+X**4,3+X**4,4+X**4,5+X**4] # a list of 2^n speed functions
 num_drivers = len(drivers)
 num_branches = 2 ** num_drivers
@@ -64,34 +61,56 @@ def add_maze_wall(a, b, speeds, X_mesh, Y_mesh, epsilon):
 	y_taps = X_mesh.shape[1]
 	wall_points = []
 	for x, y in np.nditer([X_mesh, Y_mesh]):
-		if ((dist((x,y), a) + dist((x,y), b)) < (np.sqrt(dsq_ab) + epsilon)):
+		if distance_to_ab_line(a,b,(x,y)) < epsilon:
 			wall_points.append((x,y))
 
 	for (x,y) in wall_points:
 		for i in range(len(speeds)):
 			row = int(x / dx + 0.5 * x_taps) % x_taps
 			col = int(y / dx + 0.5 * y_taps) % y_taps
-			speeds[i][row][col] = 0
+			speeds[i][row][col] /= 1000
 
 	return speeds
 
-speeds = add_maze_wall((0.3,0.3),(0.3,0.6),speeds,X, Y, -0.15)
+def distance_to_ab_line(a,b,x):
+    a = np.asarray(a, dtype=float)
+    b = np.asarray(b, dtype=float)
+    x = np.asarray(x, dtype=float)
+    direction = b - a
+    t = np.dot(x - a, direction) / np.dot(direction, direction)
+    t = np.clip(t, 0, 1)
+    projection = a + t * direction
+    return np.linalg.norm(x - projection)
+
+wall_points = [((0.3, 0.3), (0.3, 0.6)),
+               ((0.2, 0.6), (-0.8, 0.6)),
+               ((0.3, 0.5), (0.1, 0.5)),
+               ((0.2,0.3), (-0.2,0.3)),
+               ((-0.2,0.3), (-0.2,0.6)),
+               ((-0.9,-0.9), (1.0,0.3)),
+               ((-0.9,-0.9), (-0.8,0.5)),
+               ((0.1, 0.1), (-0.7, -0.8)),
+               ((-0.8, -0.5), (-0.1, -0.1))]
+wall_points = [(0.85, 0.85), (-0.85, 0.85), (-0.85, -0.85), (0.55, -0.85),
+               (0.55, 0.55), (-0.55, 0.55), (-0.55, -0.55), (0.35, -0.55),
+               (0.35, 0.35), (-0.35, 0.35), (-0.35, -0.35), (0.15, -0.35),
+               (0.15, 0.15), (-0.15, 0.15), (-0.15, -0.15)]
+print(wall_points)
+for i in range(len(wall_points) - 1):
+    print('adding wall at ' + str(wall_points[i]) + str(wall_points[i+1]))
+    speeds = add_maze_wall(wall_points[i], wall_points[i+1], speeds, X, Y, 0.05)
+
+#for (a, b) in wall_points:
+#    speeds = add_maze_wall(a, b, speeds, X, Y, 0.01)
 
 # solve the system:
 tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps)
 bfield_max = bfield.max()
 
-#plot the solution:
-speeds = add_maze_wall((0.3,0.3),(0.3,0.6),speeds,10)
-
-tau, bfield = skfmm.travel_time_genes(phi, drivers, speeds, dx=x_width/taps)
-bfield_max = bfield.max()
-
-
 plt.figure()
 num_frames = 50
 time_min = 0
-time_max =  0.8
+time_max =  8.0
 time_steps = np.linspace(time_min,time_max,num_frames)
 frames = []
 
@@ -100,8 +119,10 @@ for time_threshold in time_steps:
 	ax.contour(tau,levels=[time_threshold],colors=['red'],linewidths=2.5)
 	current_bfield = np.ma.array(bfield.copy())
 	current_bfield[tau > time_threshold] = np.ma.masked
+	current_bfield[tau == 0] = np.ma.masked
 	ax.contourf(current_bfield,levels=num_branches,vmin=0,vmax=bfield_max)
 	ax.set_title(f'Elapsed time: {time_threshold:.2f}')
+	ax.plot(*zip(*wall_points), 'ro-')
 	buf = io.BytesIO()
 	fig.savefig(buf,format='png',bbox_inches='tight',dpi=80)
 	buf.seek(0)
@@ -115,14 +136,15 @@ plt.subplot(121)
 #plt.contour(X, Y, phi, [1e-6], colors='black', linewidths=(3))
 plt.title("branch function")
 plt.contourf(bfield, levels=num_branches)
+plt.plot(*zip(*wall_points))
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 
 plt.subplot(122)
 plt.title("Travel time")
 plt.contour(X, Y, phi, [0], colors='black', linewidths=(3))
-
 plt.contour(X, Y, tau, 15)
+plt.plot(*zip(*wall_points))
 plt.gca().set_aspect(1)
 plt.xticks([]); plt.yticks([])
 
